@@ -301,8 +301,8 @@ ul { list-style: none; }
     cursor: pointer;
 }
 .service-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 40px rgba(109,192,81,0.15);
+    transform: translateY(-10px) rotateY(5deg) rotateX(3deg) scale(1.02);
+    box-shadow: 0 20px 60px rgba(109,192,81,0.2);
     border-color: var(--primary);
 }
 .service-icon {
@@ -314,7 +314,11 @@ ul { list-style: none; }
     font-size: 1.5rem; color: var(--primary);
     transition: all 0.3s;
 }
-.service-card:hover .service-icon { background: var(--primary); color: #fff; }
+.service-card:hover .service-icon {
+    background: var(--primary);
+    color: #fff;
+    transform: rotateY(180deg) scale(1.1);
+}
 .service-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--dark); }
 .service-desc { font-size: 0.88rem; color: var(--gray); line-height: 1.7; }
 

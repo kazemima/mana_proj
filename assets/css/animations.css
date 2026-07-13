@@ -1,15 +1,17 @@
 /* ========== Animations ========== */
 
-/* Stagger Card Reveal */
+/* Stagger Card Reveal with Rotation */
 .stagger-item {
     opacity: 0;
-    transform: translateY(50px) rotateX(15deg);
-    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transition-delay: calc(var(--i, 0) * 0.12s);
+    transform: translateY(80px) rotateY(-90deg) scale(0.6);
+    transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition-delay: calc(var(--i, 0) * 0.15s);
+    transform-style: preserve-3d;
+    perspective: 1000px;
 }
 .stagger-item.visible {
     opacity: 1;
-    transform: translateY(0) rotateX(0deg);
+    transform: translateY(0) rotateY(0deg) scale(1);
 }
 
 /* Rotate In */
