@@ -51,10 +51,7 @@ $seoDesc = getSeoDescription($seoItem);
     <?= renderSeoTags($seoItem) ?>
     <?= renderSchemaOrg($seoItem) ?>
     <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/fonts-local.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css">
