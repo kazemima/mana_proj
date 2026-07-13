@@ -1,0 +1,430 @@
+/* ========== Animations ========== */
+
+/* Stagger Card Reveal */
+.stagger-item {
+    opacity: 0;
+    transform: translateY(50px) rotateX(15deg);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition-delay: calc(var(--i, 0) * 0.12s);
+}
+.stagger-item.visible {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+}
+
+/* Rotate In */
+@keyframes rotateIn {
+    from { opacity: 0; transform: rotate(-200deg) scale(0.5); }
+    to { opacity: 1; transform: rotate(0) scale(1); }
+}
+.rotate-in { animation: rotateIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+/* Flip In X */
+@keyframes flipInX {
+    from { opacity: 0; transform: perspective(400px) rotateX(90deg); }
+    40% { transform: perspective(400px) rotateX(-10deg); }
+    70% { transform: perspective(400px) rotateX(10deg); }
+    to { opacity: 1; transform: perspective(400px) rotateX(0deg); }
+}
+.flip-in-x { animation: flipInX 0.8s ease both; }
+
+/* Flip In Y */
+@keyframes flipInY {
+    from { opacity: 0; transform: perspective(400px) rotateY(90deg); }
+    40% { transform: perspective(400px) rotateY(-10deg); }
+    70% { transform: perspective(400px) rotateY(10deg); }
+    to { opacity: 1; transform: perspective(400px) rotateY(0deg); }
+}
+.flip-in-y { animation: flipInY 0.8s ease both; }
+
+/* Rotate Up */
+@keyframes rotateUp {
+    from { opacity: 0; transform: translateY(100px) rotate(-10deg); }
+    to { opacity: 1; transform: translateY(0) rotate(0); }
+}
+.rotate-up { animation: rotateUp 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+/* Bounce Rotate */
+@keyframes bounceRotateIn {
+    0% { opacity: 0; transform: scale(0.3) rotate(-15deg); }
+    50% { opacity: 1; transform: scale(1.1) rotate(5deg); }
+    70% { transform: scale(0.9) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+.bounce-rotate { animation: bounceRotateIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+/* Jack In The Box */
+@keyframes jackInTheBox {
+    from { opacity: 0; transform: scale(0.1) rotate(30deg); transform-origin: center bottom; }
+    50% { transform: scale(1.2) rotate(-10deg); }
+    70% { transform: scale(0.9) rotate(3deg); }
+    to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.jack-in-box { animation: jackInTheBox 0.8s ease both; }
+
+/* Roll In */
+@keyframes rollIn {
+    from { opacity: 0; transform: translateX(-100%) rotate(-120deg); }
+    to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+.roll-in { animation: rollIn 0.8s ease both; }
+
+/* Perspective Tilt */
+.perspective-tilt {
+    transition: transform 0.5s ease;
+    transform-style: preserve-3d;
+}
+.perspective-tilt:hover {
+    transform: perspective(800px) rotateY(-5deg) rotateX(5deg) scale(1.02);
+}
+
+/* Scroll Reveal */
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+.reveal-left {
+    opacity: 0;
+    transform: translateX(-60px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal-left.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+.reveal-right {
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal-right.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+.reveal-scale {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal-scale.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Stagger delays */
+.delay-1 { transition-delay: 0.1s; }
+.delay-2 { transition-delay: 0.2s; }
+.delay-3 { transition-delay: 0.3s; }
+.delay-4 { transition-delay: 0.4s; }
+.delay-5 { transition-delay: 0.5s; }
+.delay-6 { transition-delay: 0.6s; }
+
+/* Card Hover Effects */
+.service-card {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+.service-card:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 20px 60px rgba(109, 192, 81, 0.15);
+}
+.service-card .service-icon {
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+}
+.service-card:hover .service-icon {
+    transform: scale(1.15) rotate(5deg);
+    background: var(--primary);
+    color: #fff;
+}
+
+.post-card {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.post-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+.post-card .post-image img {
+    transition: transform 0.6s ease;
+}
+.post-card:hover .post-image img {
+    transform: scale(1.08);
+}
+
+/* Button Pulse */
+.btn-primary {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+.btn-primary:hover::after {
+    width: 300px; height: 300px;
+}
+
+/* Counter Animation */
+.counter-value {
+    transition: transform 0.3s ease;
+}
+.counter-item:hover .counter-value {
+    transform: scale(1.1);
+    color: var(--primary);
+}
+.counter-item:hover .counter-icon {
+    transform: scale(1.2) rotate(10deg);
+    color: var(--primary);
+}
+.counter-icon {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Testimonial Slide */
+.testimonial-card {
+    transition: transform 0.5s ease;
+}
+.testimonial-content {
+    transition: box-shadow 0.3s ease;
+}
+.testimonial-card:hover .testimonial-content {
+    box-shadow: 0 15px 50px rgba(109, 192, 81, 0.12);
+}
+
+/* Slider Animations */
+.slide-content .slide-subtitle {
+    animation: fadeInUp 0.8s ease 0.2s both;
+}
+.slide-content .slide-title {
+    animation: fadeInUp 0.8s ease 0.4s both;
+}
+.slide-content .btn {
+    animation: fadeInUp 0.8s ease 0.6s both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(60px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(-60px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+@keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(1.05); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Floating Animation */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+.floating { animation: float 3s ease-in-out infinite; }
+
+/* Pulse Glow */
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(109, 192, 81, 0.4); }
+    50% { box-shadow: 0 0 0 15px rgba(109, 192, 81, 0); }
+}
+.pulse-glow { animation: pulseGlow 2s ease infinite; }
+
+/* Header Scroll */
+.header.scrolled {
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(10px);
+}
+
+/* Page Load */
+.page-content {
+    animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Section Title Underline */
+.section-title {
+    position: relative;
+    display: inline-block;
+}
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 3px;
+    background: var(--primary);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+.section-header:hover .section-title::after,
+.section-title.active::after {
+    width: 60px;
+}
+
+/* Footer Link Hover */
+.footer-links a {
+    transition: color 0.3s ease, padding-right 0.3s ease;
+}
+.footer-links a:hover {
+    color: var(--primary);
+    padding-right: 8px;
+}
+
+/* Social Icon Hover */
+.footer-social a {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.footer-social a:hover {
+    transform: translateY(-3px) scale(1.1);
+}
+
+/* Back to Top */
+.back-to-top {
+    transition: all 0.3s ease;
+    animation: none;
+}
+.back-to-top.visible {
+    animation: bounceIn 0.5s ease;
+}
+
+/* Search Overlay */
+.search-overlay {
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.search-form input {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.search-form input:focus {
+    box-shadow: 0 0 0 3px rgba(109, 192, 81, 0.3);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.mobile-menu-overlay {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.mobile-nav li a {
+    transition: color 0.3s ease, padding-right 0.3s ease;
+}
+.mobile-nav li a:hover {
+    color: var(--primary);
+    padding-right: 10px;
+}
+
+/* Language Switcher */
+.lang-btn {
+    transition: all 0.3s ease;
+}
+.lang-btn:hover {
+    transform: scale(1.05);
+}
+.lang-btn.active {
+    animation: bounceIn 0.4s ease;
+}
+
+/* Breadcrumb */
+.breadcrumb a {
+    transition: color 0.3s ease;
+}
+.breadcrumb a:hover {
+    color: var(--primary);
+}
+
+/* Service Detail */
+.service-detail-icon {
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.service-detail-header:hover .service-detail-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Sidebar Services */
+.sidebar-services a {
+    transition: all 0.3s ease;
+}
+.sidebar-services a:hover {
+    color: var(--primary);
+    padding-right: 8px;
+}
+.sidebar-services a:hover i:first-child {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Form Focus */
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(109, 192, 81, 0.1);
+}
+
+/* Alert Animation */
+.alert-admin {
+    animation: slideInDown 0.4s ease;
+}
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Table Row Hover */
+table tr {
+    transition: background 0.2s ease;
+}
+table tr:hover td {
+    background: #f8fdf7;
+}
+
+/* Badge Pulse */
+.badge-success {
+    animation: badgePulse 2s ease infinite;
+}
+@keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Responsive Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

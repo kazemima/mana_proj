@@ -1,0 +1,93 @@
+<?php
+session_start();
+require_once __DIR__ . '/../includes/functions.php';
+
+if (isLoggedIn()) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $pdo = $db->getConnection();
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['admin_id'] = $user['id'];
+        $_SESSION['admin_name'] = $user['name'];
+        $_SESSION['admin_role'] = $user['role'];
+        update('users', $user['id'], ['last_login' => date('Y-m-d H:i:s')]);
+        redirect(ADMIN_URL . '/index.php');
+    } else {
+        $error = 'نام کاربری یا رمز عبور اشتباه است.';
+    }
+}
+?>
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به پنل مدیریت</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Vazirmatn', Tahoma; background: linear-gradient(135deg, #1a1a2e, #16213e); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #fff; border-radius: 12px; padding: 40px; width: 400px; max-width: 95%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header h1 { font-size: 1.4rem; color: #333; margin-bottom: 5px; }
+        .login-header p { color: #888; font-size: 0.9rem; }
+        .login-header i { font-size: 3rem; color: #6dc051; margin-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #333; }
+        .form-group .input-wrapper { position: relative; }
+        .form-group .input-wrapper i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #aaa; }
+        .form-group input { width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 0.95rem; direction: rtl; transition: border-color 0.3s; }
+        .form-group input:focus { outline: none; border-color: #6dc051; box-shadow: 0 0 0 3px rgba(109,192,81,0.1); }
+        .btn-login { width: 100%; padding: 12px; background: #6dc051; color: #fff; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+        .btn-login:hover { background: #5aa842; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #f5c6cb; }
+        .back-link { text-align: center; margin-top: 20px; }
+        .back-link a { color: #6dc051; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <div class="login-header">
+            <i class="fas fa-shield-alt"></i>
+            <h1>پنل مدیریت</h1>
+            <p>شرکت مدرن اندیشان نوین ابتکار</p>
+        </div>
+        <?php if ($error): ?>
+        <div class="error"><?= $error ?></div>
+        <?php endif; ?>
+        <form method="POST">
+            <div class="form-group">
+                <label>نام کاربری</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" name="username" required placeholder="نام کاربری" autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" required placeholder="رمز عبور">
+                </div>
+            </div>
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> ورود
+            </button>
+        </form>
+        <div class="back-link">
+            <a href="<?= SITE_URL ?>/"><i class="fas fa-arrow-right"></i> بازگشت به سایت</a>
+        </div>
+    </div>
+</body>
+</html>
