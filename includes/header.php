@@ -167,3 +167,52 @@ $seoDesc = getSeoDescription($seoItem);
         </form>
     </div>
 </div>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-header">
+        <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;">
+            <?php if (getSetting('site_logo')): ?>
+            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="" style="height:35px;vertical-align:middle;">
+            <?php else: ?>
+            <?= sanitize(getSetting('site_name')) ?>
+            <?php endif; ?>
+        </a>
+        <button class="mobile-menu-close"><i class="fas fa-times"></i></button>
+    </div>
+    <nav class="mobile-nav">
+        <ul>
+            <?php foreach ($menuTree as $item):
+            $item = getLocalizedMenuItem($item);
+            ?>
+            <li class="<?= $item['children'] ? 'has-submenu' : '' ?> <?= ($currentFile === ltrim($item['url'], '/') && $item['url'] !== '#') ? 'active' : '' ?>">
+                <a href="<?= $item['children'] ? '#' : resolveUrl($item['url']) ?>" <?php if ($item['target'] == '_blank'): ?>target="_blank"<?php endif; ?>>
+                    <?php if ($item['icon'] && !$item['children']): ?>
+                    <i class="<?= $item['icon'] ?>" style="margin-left:6px;"></i>
+                    <?php endif; ?>
+                    <?= sanitize($item['title']) ?>
+                </a>
+                <?php if ($item['children']): ?>
+                <ul class="submenu">
+                    <?php foreach ($item['children'] as $child):
+                    $child = getLocalizedMenuItem($child);
+                    ?>
+                    <li>
+                        <a href="<?= resolveUrl($child['url']) ?>" <?php if ($child['target'] == '_blank'): ?>target="_blank"<?php endif; ?>>
+                            <?php if ($child['icon']): ?>
+                            <i class="<?= $child['icon'] ?>" style="margin-left:5px;"></i>
+                            <?php endif; ?>
+                            <?= sanitize($child['title']) ?>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </nav>
+</div>
