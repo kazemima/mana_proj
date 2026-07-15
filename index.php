@@ -92,7 +92,7 @@ foreach ($posts as &$post) { $post = getLocalizedPost($post); }
             </div>
             <div class="strategy-image reveal-right">
                 <?php if (getSetting('strategy_image')): ?>
-                <img src="<?= getImageUrl(getSetting('strategy_image')) ?>" alt="درباره ما">
+                <?= picture(getSetting('strategy_image'), 'درباره ما') ?>
                 <?php else: ?>
                 <div class="strategy-placeholder">
                     <i class="fas fa-chart-line"></i>

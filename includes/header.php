@@ -104,17 +104,17 @@ $seoDesc = getSeoDescription($seoItem);
                 </div>
                 <?php endif; ?>
                 <div class="social-icons">
-                    <?php if (getSetting('facebook')): ?>
-                    <a href="<?= getSetting('facebook') ?>" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                    <?php if (getSetting('facebook') && getSetting('facebook') !== '#'): ?>
+                    <a href="<?= getSetting('facebook') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="فیسبوک"><i class="fab fa-facebook-f"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('twitter')): ?>
-                    <a href="<?= getSetting('twitter') ?>" target="_blank" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <?php if (getSetting('twitter') && getSetting('twitter') !== '#'): ?>
+                    <a href="<?= getSetting('twitter') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('linkedin')): ?>
-                    <a href="<?= getSetting('linkedin') ?>" target="_blank" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
+                    <?php if (getSetting('linkedin') && getSetting('linkedin') !== '#'): ?>
+                    <a href="<?= getSetting('linkedin') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="لینکدین"><i class="fab fa-linkedin-in"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('instagram')): ?>
-                    <a href="<?= getSetting('instagram') ?>" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <?php if (getSetting('instagram') && getSetting('instagram') !== '#'): ?>
+                    <a href="<?= getSetting('instagram') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -131,7 +131,7 @@ $seoDesc = getSeoDescription($seoItem);
             </button>
             <a href="<?= SITE_URL ?>" class="logo">
                 <?php if (getSetting('site_logo')): ?>
-                <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>">
+                <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>" loading="eager" fetchpriority="high">
                 <?php else: ?>
                 <span class="logo-text"><?= sanitize(getSetting('site_name')) ?></span>
                 <?php endif; ?>
@@ -199,12 +199,12 @@ $seoDesc = getSeoDescription($seoItem);
     <div class="mobile-menu-header">
         <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;">
             <?php if (getSetting('site_logo')): ?>
-            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="" style="height:35px;vertical-align:middle;">
+            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="" style="height:35px;vertical-align:middle;" loading="eager">
             <?php else: ?>
             <?= sanitize(getSetting('site_name')) ?>
             <?php endif; ?>
         </a>
-        <button class="mobile-menu-close"><i class="fas fa-times"></i></button>
+        <button class="mobile-menu-close" aria-label="بستن منو"><i class="fas fa-times"></i></button>
     </div>
     <nav class="mobile-nav">
         <ul>

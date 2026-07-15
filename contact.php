@@ -77,17 +77,17 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                 </div>
                 <div class="contact-social">
-                    <?php if (getSetting('facebook')): ?>
-                    <a href="<?= getSetting('facebook') ?>" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                    <?php if (getSetting('facebook') && getSetting('facebook') !== '#'): ?>
+                    <a href="<?= getSetting('facebook') ?>" target="_blank" rel="noopener" aria-label="فیسبوک"><i class="fab fa-facebook-f"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('twitter')): ?>
-                    <a href="<?= getSetting('twitter') ?>" target="_blank"><i class="fab fa-twitter"></i></a>
+                    <?php if (getSetting('twitter') && getSetting('twitter') !== '#'): ?>
+                    <a href="<?= getSetting('twitter') ?>" target="_blank" rel="noopener" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('linkedin')): ?>
-                    <a href="<?= getSetting('linkedin') ?>" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                    <?php if (getSetting('linkedin') && getSetting('linkedin') !== '#'): ?>
+                    <a href="<?= getSetting('linkedin') ?>" target="_blank" rel="noopener" aria-label="لینکدین"><i class="fab fa-linkedin-in"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('instagram')): ?>
-                    <a href="<?= getSetting('instagram') ?>" target="_blank"><i class="fab fa-instagram"></i></a>
+                    <?php if (getSetting('instagram') && getSetting('instagram') !== '#'): ?>
+                    <a href="<?= getSetting('instagram') ?>" target="_blank" rel="noopener" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -131,7 +131,7 @@ require_once __DIR__ . '/includes/header.php';
                         <label for="message">پیام *</label>
                         <textarea id="message" name="message" rows="6" required><?= sanitize($_POST['message'] ?? '') ?></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">ارسال پیام</button>
+                    <button type="submit" class="btn btn-primary" aria-label="ارسال پیام">ارسال پیام</button>
                 </form>
             </div>
         </div>

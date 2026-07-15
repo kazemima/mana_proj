@@ -7,24 +7,24 @@
                 <div class="footer-col">
                     <div class="footer-logo">
                         <?php if (getSetting('site_logo')): ?>
-                        <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>">
+                        <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>" loading="lazy" decoding="async">
                         <?php else: ?>
                         <span class="logo-text"><?= sanitize(getSetting('site_name')) ?></span>
                         <?php endif; ?>
                     </div>
                     <p class="footer-about"><?= nl2br(sanitize(getSetting('about_text'))) ?></p>
                     <div class="footer-social">
-                        <?php if (getSetting('facebook')): ?>
-                        <a href="<?= getSetting('facebook') ?>" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                        <?php if (getSetting('facebook') && getSetting('facebook') !== '#'): ?>
+                        <a href="<?= getSetting('facebook') ?>" target="_blank" rel="noopener" aria-label="فیسبوک"><i class="fab fa-facebook-f"></i></a>
                         <?php endif; ?>
-                        <?php if (getSetting('twitter')): ?>
-                        <a href="<?= getSetting('twitter') ?>" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <?php if (getSetting('twitter') && getSetting('twitter') !== '#'): ?>
+                        <a href="<?= getSetting('twitter') ?>" target="_blank" rel="noopener" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
                         <?php endif; ?>
-                        <?php if (getSetting('linkedin')): ?>
-                        <a href="<?= getSetting('linkedin') ?>" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                        <?php if (getSetting('linkedin') && getSetting('linkedin') !== '#'): ?>
+                        <a href="<?= getSetting('linkedin') ?>" target="_blank" rel="noopener" aria-label="لینکدین"><i class="fab fa-linkedin-in"></i></a>
                         <?php endif; ?>
-                        <?php if (getSetting('instagram')): ?>
-                        <a href="<?= getSetting('instagram') ?>" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <?php if (getSetting('instagram') && getSetting('instagram') !== '#'): ?>
+                        <a href="<?= getSetting('instagram') ?>" target="_blank" rel="noopener" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
 </footer>
 
 <!-- Back to Top -->
-<a href="#top" class="back-to-top" id="backToTop" title="بازگشت به بالا">
+<a href="#top" class="back-to-top" id="backToTop" title="بازگشت به بالا" aria-label="بازگشت به بالا">
     <i class="fas fa-chevron-up"></i>
 </a>
 
