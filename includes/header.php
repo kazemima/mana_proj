@@ -59,17 +59,14 @@ $seoDesc = getSeoDescription($seoItem);
     <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
     <link rel="shortcut icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
     <?php endif; ?>
-    <!-- Preload critical fonts for faster LCP -->
+    <!-- Preload critical fonts for faster LCP (only above-the-fold weights) -->
     <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Medium.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Preload LCP hero image -->
     <?php if ($preloadImageUrl): ?>
     <link rel="preload" href="<?= $preloadImageUrl ?>" as="image" fetchpriority="high">
     <?php endif; ?>
-    <!-- Preload font stylesheets -->
+    <!-- Preload font stylesheet -->
     <link rel="preload" href="<?= SITE_URL ?>/assets/css/fonts-local.css" as="style">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/fonts-local.css">
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> -->
