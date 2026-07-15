@@ -55,7 +55,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="post-card">
                         <div class="post-image">
                             <a href="<?= SITE_URL ?>/post.php?slug=<?= $post['slug'] ?>">
-                                <img src="<?= getImageUrl($post['image']) ?>" alt="<?= sanitize($post['title']) ?>">
+                                <?= picture($post['image'], $post['title']) ?>
                             </a>
                         </div>
                         <div class="post-details">
@@ -128,7 +128,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php foreach ($recentPosts as $rp): ?>
                         <li>
                             <a href="<?= SITE_URL ?>/post.php?slug=<?= $rp['slug'] ?>">
-                                <img src="<?= getImageUrl($rp['image']) ?>" alt="<?= sanitize($rp['title']) ?>">
+                                <?= picture($rp['image'], $rp['title'], 'sidebar-post-img') ?>
                                 <div>
                                     <span class="post-date"><?= timeAgo($rp['created_at']) ?></span>
                                     <span class="post-title-mini"><?= sanitize($rp['title']) ?></span>

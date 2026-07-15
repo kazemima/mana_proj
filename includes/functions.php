@@ -92,17 +92,278 @@ function uploadImage($file, $prefix = '') {
         return false;
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     if (!in_array($ext, $allowed)) return false;
+
     $name = $prefix . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
-    move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $name);
+    $destPath = UPLOAD_DIR . $name;
+
+    // Move original file first
+    move_uploaded_file($file['tmp_name'], $destPath);
+
+    // Optimize image if GD is available
+    if (function_exists('imagecreatefromjpeg') || function_exists('imagecreatefrompng')) {
+        optimizeImage($destPath, $ext);
+        generateWebP($destPath, $ext);
+        generateResponsive($destPath, $name, $ext);
+    }
+
     return $name;
 }
 
-function getImageUrl($filename) {
+function optimizeImage($filePath, $ext) {
+    $img = loadImage($filePath, $ext);
+    if (!$img) return;
+
+    $maxWidth = 1920;
+    $maxHeight = 1080;
+    $origWidth = imagesx($img);
+    $origHeight = imagesy($img);
+
+    // Resize if larger than max dimensions
+    if ($origWidth > $maxWidth || $origHeight > $maxHeight) {
+        $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight);
+        $newWidth = (int)($origWidth * $ratio);
+        $newHeight = (int)($origHeight * $ratio);
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+        imagealphablending($resized, false);
+        imagesavealpha($resized, true);
+        imagecopyresampled($resized, $img, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+        imagedestroy($img);
+        $img = $resized;
+        $origWidth = $newWidth;
+        $origHeight = $newHeight;
+    }
+
+    saveImage($img, $filePath, $ext);
+    imagedestroy($img);
+}
+
+function generateWebP($filePath, $ext) {
+    $webpPath = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $filePath);
+    if ($ext === 'webp') return;
+
+    $img = loadImage($filePath, $ext);
+    if (!$img) return;
+
+    imagewebp($img, $webpPath, 82);
+    imagedestroy($img);
+}
+
+function generateResponsive($filePath, $originalName, $ext) {
+    $sizes = [
+        'mobile'  => ['max' => 480,  'suffix' => '_sm'],
+        'tablet'  => ['max' => 768,  'suffix' => '_md'],
+    ];
+
+    foreach ($sizes as $size) {
+        $img = loadImage($filePath, $ext);
+        if (!$img) continue;
+
+        $origWidth = imagesx($img);
+        $origHeight = imagesy($img);
+
+        if ($origWidth <= $size['max']) {
+            imagedestroy($img);
+            continue;
+        }
+
+        $ratio = $size['max'] / $origWidth;
+        $newWidth = $size['max'];
+        $newHeight = (int)($origHeight * $ratio);
+
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+        imagealphablending($resized, false);
+        imagesavealpha($resized, true);
+        imagecopyresampled($resized, $img, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+        imagedestroy($img);
+
+        $nameWithoutExt = pathinfo($originalName, PATHINFO_FILENAME);
+        $responsiveName = $nameWithoutExt . $size['suffix'] . '.' . $ext;
+        $responsivePath = UPLOAD_DIR . $responsiveName;
+
+        saveImage($resized, $responsivePath, $ext);
+        imagedestroy($resized);
+
+        // Also generate WebP for responsive version
+        $webpPath = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $responsivePath);
+        $imgWebp = loadImage($responsivePath, $ext);
+        if ($imgWebp) {
+            imagewebp($imgWebp, $webpPath, 80);
+            imagedestroy($imgWebp);
+        }
+    }
+}
+
+function loadImage($filePath, $ext) {
+    switch (strtolower($ext)) {
+        case 'jpg':
+        case 'jpeg':
+            return imagecreatefromjpeg($filePath);
+        case 'png':
+            $img = imagecreatefrompng($filePath);
+            if ($img) {
+                imagealphablending($img, false);
+                imagesavealpha($img, true);
+            }
+            return $img;
+        case 'gif':
+            return imagecreatefromgif($filePath);
+        default:
+            return null;
+    }
+}
+
+function saveImage($img, $filePath, $ext) {
+    switch (strtolower($ext)) {
+        case 'jpg':
+        case 'jpeg':
+            imagejpeg($img, $filePath, 82);
+            break;
+        case 'png':
+            imagepng($img, $filePath, 6);
+            break;
+        case 'gif':
+            imagegif($img, $filePath);
+            break;
+    }
+}
+
+function getImageUrl($filename, $size = null) {
     if (!$filename) return SITE_URL . '/assets/images/placeholder.png';
     if (strpos($filename, 'http') === 0) return $filename;
-    return SITE_URL . '/assets/uploads/' . $filename;
+
+    $baseUrl = SITE_URL . '/assets/uploads/';
+
+    // If WebP is requested or browser supports it
+    if ($size) {
+        $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
+        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $suffix = $size === 'mobile' ? '_sm' : '_md';
+
+        // Check if responsive WebP exists
+        $responsiveWebp = $nameWithoutExt . $suffix . '.webp';
+        if (file_exists(UPLOAD_DIR . $responsiveWebp)) {
+            return $baseUrl . $responsiveWebp;
+        }
+        // Check if responsive original exists
+        $responsiveOriginal = $nameWithoutExt . $suffix . '.' . $ext;
+        if (file_exists(UPLOAD_DIR . $responsiveOriginal)) {
+            return $baseUrl . $responsiveOriginal;
+        }
+    }
+
+    // Check if WebP version exists
+    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
+    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    if ($ext !== 'webp') {
+        $webpVersion = $nameWithoutExt . '.webp';
+        if (file_exists(UPLOAD_DIR . $webpVersion)) {
+            return $baseUrl . $webpVersion;
+        }
+    }
+
+    return $baseUrl . $filename;
+}
+
+function getResponsiveImage($filename) {
+    if (!$filename || strpos($filename, 'http') === 0) return '';
+
+    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
+    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    $baseUrl = SITE_URL . '/assets/uploads/';
+    $srcset = [];
+
+    // Mobile version
+    $mobileWebp = $nameWithoutExt . '_sm.webp';
+    $mobileOriginal = $nameWithoutExt . '_sm.' . $ext;
+    if (file_exists(UPLOAD_DIR . $mobileWebp)) {
+        $srcset[] = $baseUrl . $mobileWebp . ' 480w';
+    } elseif (file_exists(UPLOAD_DIR . $mobileOriginal)) {
+        $srcset[] = $baseUrl . $mobileOriginal . ' 480w';
+    }
+
+    // Tablet version
+    $tabletWebp = $nameWithoutExt . '_md.webp';
+    $tabletOriginal = $nameWithoutExt . '_md.' . $ext;
+    if (file_exists(UPLOAD_DIR . $tabletWebp)) {
+        $srcset[] = $baseUrl . $tabletWebp . ' 768w';
+    } elseif (file_exists(UPLOAD_DIR . $tabletOriginal)) {
+        $srcset[] = $baseUrl . $tabletOriginal . ' 768w';
+    }
+
+    // Original WebP
+    if ($ext !== 'webp') {
+        $webpVersion = $nameWithoutExt . '.webp';
+        if (file_exists(UPLOAD_DIR . $webpVersion)) {
+            $srcset[] = $baseUrl . $webpVersion . ' 1920w';
+        }
+    }
+
+    // Original
+    $srcset[] = $baseUrl . $filename . ' 1920w';
+
+    return implode(', ', $srcset);
+}
+
+function picture($filename, $alt = '', $class = '', $fetchPriority = '') {
+    if (!$filename || strpos($filename, 'http') === 0) {
+        return '<img src="' . getImageUrl($filename) . '" alt="' . $alt . '"' . ($class ? ' class="' . $class . '"' : '') . ' loading="lazy">';
+    }
+
+    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
+    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    $baseUrl = SITE_URL . '/assets/uploads/';
+
+    $webpVersion = $nameWithoutExt . '.webp';
+    $hasWebP = file_exists(UPLOAD_DIR . $webpVersion) && $ext !== 'webp';
+
+    $mobileWebp = $nameWithoutExt . '_sm.webp';
+    $mobileOrig = $nameWithoutExt . '_sm.' . $ext;
+    $hasMobileWebP = file_exists(UPLOAD_DIR . $mobileWebp);
+    $hasMobileOrig = file_exists(UPLOAD_DIR . $mobileOrig);
+
+    $tabletWebp = $nameWithoutExt . '_md.webp';
+    $tabletOrig = $nameWithoutExt . '_md.' . $ext;
+    $hasTabletWebP = file_exists(UPLOAD_DIR . $tabletWebp);
+    $hasTabletOrig = file_exists(UPLOAD_DIR . $tabletOrig);
+
+    $attr = $class ? ' class="' . $class . '"' : '';
+    $attr .= ' loading="lazy"';
+    $attr .= ' decoding="async"';
+    if ($fetchPriority) $attr .= ' fetchpriority="' . $fetchPriority . '"';
+
+    $hasResponsive = $hasMobileWebP || $hasMobileOrig || $hasTabletWebP || $hasTabletOrig;
+
+    if ($hasWebP || $hasResponsive) {
+        $html = '<picture>';
+
+        // Mobile sources
+        if ($hasMobileWebP) {
+            $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileWebp . '" type="image/webp">';
+        } elseif ($hasMobileOrig) {
+            $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileOrig . '">';
+        }
+
+        // Tablet sources
+        if ($hasTabletWebP) {
+            $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletWebp . '" type="image/webp">';
+        } elseif ($hasTabletOrig) {
+            $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletOrig . '">';
+        }
+
+        // Desktop WebP
+        if ($hasWebP) {
+            $html .= '<source srcset="' . $baseUrl . $webpVersion . '" type="image/webp">';
+        }
+
+        // Fallback
+        $html .= '<img src="' . $baseUrl . $filename . '" alt="' . $alt . '"' . $attr . '>';
+        $html .= '</picture>';
+        return $html;
+    }
+
+    return '<img src="' . $baseUrl . $filename . '" alt="' . $alt . '"' . $attr . '>';
 }
 
 function redirect($url) {

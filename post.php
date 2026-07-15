@@ -50,7 +50,7 @@ $relatedPosts = getAll('posts', "status = 1 AND id != {$post['id']}", 'created_a
                     </div>
                     <?php if ($post['image']): ?>
                     <div class="post-featured-image">
-                        <img src="<?= getImageUrl($post['image']) ?>" alt="<?= sanitize($post['title']) ?>">
+                        <?= picture($post['image'], $post['title']) ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -68,7 +68,7 @@ $relatedPosts = getAll('posts', "status = 1 AND id != {$post['id']}", 'created_a
                 <div class="post-card">
                     <div class="post-image">
                         <a href="<?= SITE_URL ?>/post.php?slug=<?= $rp['slug'] ?>">
-                            <img src="<?= getImageUrl($rp['image']) ?>" alt="<?= sanitize($rp['title']) ?>">
+                            <?= picture($rp['image'], $rp['title']) ?>
                         </a>
                     </div>
                     <div class="post-details">

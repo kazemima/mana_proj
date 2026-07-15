@@ -265,6 +265,13 @@ ul { list-style: none; }
     background-size: cover;
     background-position: center;
     background-color: #2d4a3e;
+    overflow: hidden;
+}
+.slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
 }
 .slide::after {
     content: '';
@@ -499,11 +506,12 @@ ul { list-style: none; }
     box-shadow: 0 8px 30px rgba(0,0,0,0.1);
 }
 .post-image { overflow: hidden; }
-.post-image img {
+.post-image picture { display: block; width: 100%; height: 100%; }
+.post-image img, .post-image picture img {
     width: 100%; height: 200px; object-fit: cover;
     transition: transform 0.4s;
 }
-.post-card:hover .post-image img { transform: scale(1.05); }
+.post-card:hover .post-image img, .post-card:hover .post-image picture img { transform: scale(1.05); }
 .post-details { padding: 20px; }
 .post-meta { display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.85rem; color: var(--gray); }
 .post-meta i { color: var(--primary); margin-left: 4px; }
@@ -672,7 +680,7 @@ ul { list-style: none; }
 .sidebar-posts li { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .sidebar-posts li:last-child { border: none; }
 .sidebar-posts a { display: flex; gap: 10px; align-items: center; }
-.sidebar-posts img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius); }
+.sidebar-posts img, .sidebar-posts picture img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius); }
 .sidebar-posts .post-date { font-size: 0.8rem; color: var(--gray); display: block; }
 .sidebar-posts .post-title-mini { font-size: 0.85rem; font-weight: 600; color: var(--dark); display: block; }
 
@@ -680,11 +688,12 @@ ul { list-style: none; }
 .single-post-section .post-layout { max-width: 800px; margin: 0 auto; }
 .post-header { margin-bottom: 30px; }
 .post-featured-image { margin-top: 20px; border-radius: var(--radius); overflow: hidden; }
-.post-featured-image img { width: 100%; }
+.post-featured-image picture { display: block; width: 100%; }
+.post-featured-image img, .post-featured-image picture img { width: 100%; }
 .post-body { font-size: 1.05rem; line-height: 2.2; color: var(--text-secondary); }
 .post-body p { margin-bottom: 20px; }
 .post-body h2, .post-body h3 { margin: 25px 0 12px; color: var(--dark); }
-.post-body img { border-radius: var(--radius); margin: 15px 0; }
+.post-body img, .post-body picture img { border-radius: var(--radius); margin: 15px 0; }
 .related-posts { margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border); }
 .related-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 25px; color: var(--dark); }
 

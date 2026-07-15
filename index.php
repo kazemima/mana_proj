@@ -18,7 +18,14 @@ foreach ($posts as &$post) { $post = getLocalizedPost($post); }
         <?php if (count($sliders) > 0): ?>
         <?php foreach ($sliders as $index => $slide): ?>
         <div class="slide <?= $index == 0 ? 'active' : '' ?>" data-index="<?= $index ?>">
+            <?php if ($index == 0): ?>
+            <!-- First slide uses <img> for LCP -->
+            <div class="slide-bg">
+                <?= picture($slide['image'], $slide['title'], 'slide-img', 'high') ?>
+            </div>
+            <?php else: ?>
             <div class="slide-bg" style="background-image: url('<?= getImageUrl($slide['image']) ?>')"></div>
+            <?php endif; ?>
             <div class="slide-content">
                 <div class="container">
                     <div class="slide-inner">
@@ -157,7 +164,7 @@ foreach ($posts as &$post) { $post = getLocalizedPost($post); }
             <div class="post-card stagger-item" style="--i: <?= $index ?>;">
                 <div class="post-image">
                     <a href="<?= SITE_URL ?>/post.php?slug=<?= $post['slug'] ?>">
-                        <img src="<?= getImageUrl($post['image']) ?>" alt="<?= sanitize($post['title']) ?>">
+                        <?= picture($post['image'], $post['title']) ?>
                     </a>
                 </div>
                 <div class="post-details">
