@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-$pageTitle = ' 1صفحه اصلی';
+$pageTitle = 'صفحه اصلی';
 require_once __DIR__ . '/includes/header.php';
 
 $sliders = getAll('sliders', 'status = 1', 'sort_order ASC');
