@@ -109,6 +109,20 @@
     AddOutputFilterByType DEFLATE font/woff2
 </IfModule>
 
+# ========== Preload Font Headers ==========
+<IfModule mod_headers.c>
+    # Ensure preloaded fonts have correct CORS
+    <FilesMatch "\.(woff2|woff|ttf|otf)$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Cross-Origin-Resource-Policy "cross-origin"
+    </FilesMatch>
+
+    # Link header for preload hints (HTTP/2 push)
+    <FilesMatch "\.(html|htm|php)$">
+        Header set Link "</assets/fonts/Vazirmatn-Regular.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
+    </FilesMatch>
+</IfModule>
+
 # ========== Remove ETag ==========
 <IfModule mod_headers.c>
     Header unset ETag

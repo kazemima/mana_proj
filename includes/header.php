@@ -37,6 +37,10 @@ foreach ($activeLangs as $al) {
 $langDir = $langData ? $langData['direction'] : 'rtl';
 $langCode = $langData ? $langData['code'] : 'fa';
 
+// Preload first slider image for LCP
+$preloadSlide = $pdo->query("SELECT image FROM sliders WHERE status = 1 ORDER BY sort_order ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$preloadImageUrl = $preloadSlide ? getImageUrl($preloadSlide['image']) : null;
+
 // SEO variables (can be overridden by individual pages)
 $seoItem = isset($seoItem) ? $seoItem : null;
 $seoTitle = getSeoTitle($seoItem);
@@ -50,12 +54,30 @@ $seoDesc = getSeoDescription($seoItem);
     <title><?= sanitize($seoTitle) ?></title>
     <?= renderSeoTags($seoItem) ?>
     <?= renderSchemaOrg($seoItem) ?>
-    <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>">
+    <meta name="theme-color" content="#6dc051">
+    <?php if (getSetting('site_favicon')): ?>
+    <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
+    <link rel="shortcut icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
+    <?php endif; ?>
+    <!-- Preload critical fonts for faster LCP -->
+    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Medium.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Preload LCP hero image -->
+    <?php if ($preloadImageUrl): ?>
+    <link rel="preload" href="<?= $preloadImageUrl ?>" as="image" fetchpriority="high">
+    <?php endif; ?>
+    <!-- Preload font stylesheets -->
+    <link rel="preload" href="<?= SITE_URL ?>/assets/css/fonts-local.css" as="style">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/fonts-local.css">
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> -->
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css">
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css"></noscript>
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css">
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css"></noscript>
 </head>
 <body>
 <!-- Top Bar -->
