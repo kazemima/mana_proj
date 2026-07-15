@@ -1,5 +1,29 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    // ========== Theme Toggle (Dark/Light Mode) ==========
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    function setTheme(theme) {
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+
+    // Load saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const current = html.getAttribute('data-theme');
+            setTheme(current === 'dark' ? 'light' : 'dark');
+        });
+    }
+
     // ========== Hero Slider ==========
     const slides = document.querySelectorAll('.hero-slider .slide');
     const dots = document.querySelectorAll('.hero-slider .dot');

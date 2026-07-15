@@ -52,7 +52,8 @@ $seoDesc = getSeoDescription($seoItem);
     <?= renderSchemaOrg($seoItem) ?>
     <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/fonts-local.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> -->
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css">
 </head>
@@ -149,6 +150,9 @@ $seoDesc = getSeoDescription($seoItem);
                 </ul>
             </nav>
             <div class="header-actions">
+                <button class="theme-toggle" aria-label="تغییر حالت نمایش" id="themeToggle" title="حالت شب/روز">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <button class="search-toggle" aria-label="جستجو">
                     <i class="fas fa-search"></i>
                 </button>
