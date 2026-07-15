@@ -197,9 +197,9 @@ $seoDesc = getSeoDescription($seoItem);
 <!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu-header">
-        <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;">
+        <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;" aria-label="<?= sanitize(getSetting('site_name')) ?>">
             <?php if (getSetting('site_logo')): ?>
-            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="" style="height:35px;vertical-align:middle;" loading="eager">
+            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>" style="height:35px;vertical-align:middle;" loading="eager">
             <?php else: ?>
             <?= sanitize(getSetting('site_name')) ?>
             <?php endif; ?>
