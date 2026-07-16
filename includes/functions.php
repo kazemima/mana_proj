@@ -380,6 +380,20 @@ function isLoggedIn() {
     return isset($_SESSION['admin_id']) && $_SESSION['admin_id'] > 0;
 }
 
+function hasPermission($requiredRole) {
+    if (!isLoggedIn()) return false;
+    $roleHierarchy = [
+        'admin' => 10,
+        'editor' => 7,
+        'author' => 5,
+        'contributor' => 3,
+        'subscriber' => 1,
+    ];
+    $userLevel = $roleHierarchy[$_SESSION['admin_role'] ?? 'subscriber'] ?? 0;
+    $requiredLevel = $roleHierarchy[$requiredRole] ?? 0;
+    return $userLevel >= $requiredLevel;
+}
+
 function requireLogin() {
     if (!isLoggedIn()) {
         redirect(ADMIN_URL . '/login.php');

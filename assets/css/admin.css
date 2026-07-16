@@ -14,14 +14,15 @@ img { max-width: 100%; }
     color: #fff;
     position: fixed;
     top: 0; right: 0; bottom: 0;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     z-index: 1000;
     transition: transform 0.3s;
 }
 .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .sidebar-logo { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; font-size: 1.1rem; }
 .sidebar-logo i { color: #6dc051; font-size: 1.4rem; }
-.sidebar-nav { padding: 15px 0; }
+.sidebar-nav { padding: 15px 0; flex: 1; overflow-y: auto; }
 .sidebar-nav ul li a {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 20px;
@@ -35,8 +36,8 @@ img { max-width: 100%; }
 .sidebar-footer {
     padding: 15px 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
-    position: absolute; bottom: 0; right: 0; left: 0;
     background: #1a1a2e;
+    flex-shrink: 0;
 }
 .sidebar-footer a {
     display: flex; align-items: center; gap: 10px;
@@ -118,6 +119,8 @@ table tr:hover td { background: #f8fdf7; }
 .badge-danger { background: #f8d7da; color: #721c24; }
 .badge-info { background: #d1ecf1; color: #0c5460; }
 .badge-warning { background: #fff3cd; color: #856404; }
+.badge-primary { background: #cce5ff; color: #004085; }
+.badge-secondary { background: #e2e3e5; color: #383d41; }
 
 /* ========== Buttons ========== */
 .btn-admin {

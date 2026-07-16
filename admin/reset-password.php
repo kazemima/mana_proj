@@ -2,28 +2,53 @@
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
 
-if (isLoggedIn()) {
-    redirect(ADMIN_URL . '/index.php');
+$token = $_GET['token'] ?? '';
+$error = '';
+$message = '';
+
+if (empty($token)) {
+    redirect(ADMIN_URL . '/login.php');
 }
 
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
+$pdo = $db->getConnection();
+$stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ?");
+$stmt->execute([$token]);
+$reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$reset) {
+    $error = 'لینک بازیابی نامعتبر است.';
+} else {
+    $created = new DateTime($reset['created_at']);
+    $now = new DateTime();
+    $diff = $now->diff($created);
+    if ($diff->h >= 1 && $diff->i > 0) {
+        $error = 'لینک بازیابی منقضی شده است.';
+        $pdo->prepare("DELETE FROM password_resets WHERE token = ?")->execute([$token]);
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     $password = $_POST['password'] ?? '';
+    $passwordConfirm = $_POST['password_confirm'] ?? '';
 
-    $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['admin_id'] = $user['id'];
-        $_SESSION['admin_name'] = $user['name'];
-        $_SESSION['admin_role'] = $user['role'];
-        update('users', $user['id'], ['last_login' => date('Y-m-d H:i:s')]);
-        redirect(ADMIN_URL . '/index.php');
+    if (strlen($password) < 6) {
+        $error = 'رمز عبور باید حداقل ۶ کاراکتر باشد.';
+    } elseif ($password !== $passwordConfirm) {
+        $error = 'رمز عبور و تکرار آن مطابقت ندارند.';
     } else {
-        $error = 'نام کاربری یا رمز عبور اشتباه است.';
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$reset['email']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            update('users', $user['id'], [
+                'password' => password_hash($password, PASSWORD_DEFAULT)
+            ]);
+            $pdo->prepare("DELETE FROM password_resets WHERE email = ?")->execute([$reset['email']]);
+            $message = 'رمز عبور با موفقیت تغییر کرد.';
+        } else {
+            $error = 'خطا در بازیابی رمز عبور.';
+        }
     }
 }
 ?>
@@ -32,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ورود به پنل مدیریت</title>
+    <title>تغییر رمز عبور</title>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -52,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-login { width: 100%; padding: 12px; background: #6dc051; color: #fff; border: none; border-radius: 8px; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; }
         .btn-login:hover { background: #5aa842; }
         .error { background: #f8d7da; color: #721c24; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #f5c6cb; }
+        .success { background: #d4edda; color: #155724; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #c3e6cb; }
         .back-link { text-align: center; margin-top: 20px; }
         .back-link a { color: #6dc051; font-size: 0.85rem; }
     </style>
@@ -59,37 +85,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="login-box">
         <div class="login-header">
-            <i class="fas fa-shield-alt"></i>
-            <h1>پنل مدیریت</h1>
-            <p>شرکت مدرن اندیشان نوین ابتکار</p>
+            <i class="fas fa-lock"></i>
+            <h1>تغییر رمز عبور</h1>
+            <p>رمز عبور جدید خود را وارد کنید</p>
         </div>
         <?php if ($error): ?>
         <div class="error"><?= $error ?></div>
         <?php endif; ?>
+        <?php if ($message): ?>
+        <div class="success"><?= $message ?></div>
+        <div style="text-align:center; margin-top:15px;">
+            <a href="<?= ADMIN_URL ?>/login.php" style="color:#6dc051; font-weight:600;">ورود با رمز جدید</a>
+        </div>
+        <?php endif; ?>
+        <?php if (empty($error) && empty($message)): ?>
         <form method="POST">
             <div class="form-group">
-                <label>نام کاربری</label>
+                <label>رمز عبور جدید</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-user"></i>
-                    <input type="text" name="username" required placeholder="نام کاربری" autofocus>
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" required placeholder="حداقل ۶ کاراکتر" minlength="6">
                 </div>
             </div>
             <div class="form-group">
-                <label>رمز عبور</label>
+                <label>تکرار رمز عبور</label>
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
-                    <input type="password" name="password" required placeholder="رمز عبور">
+                    <input type="password" name="password_confirm" required placeholder="تکرار رمز عبور">
                 </div>
             </div>
             <button type="submit" class="btn-login">
-                <i class="fas fa-sign-in-alt"></i> ورود
+                <i class="fas fa-save"></i> ذخیره رمز جدید
             </button>
         </form>
+        <?php endif; ?>
         <div class="back-link">
-            <a href="<?= ADMIN_URL ?>/forgot-password.php"><i class="fas fa-key"></i> رمز عبور خود را فراموش کرده‌اید؟</a>
-        </div>
-        <div class="back-link">
-            <a href="<?= SITE_URL ?>/"><i class="fas fa-arrow-right"></i> بازگشت به سایت</a>
+            <a href="<?= ADMIN_URL ?>/login.php"><i class="fas fa-arrow-right"></i> بازگشت به صفحه ورود</a>
         </div>
     </div>
 </body>

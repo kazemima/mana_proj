@@ -223,6 +223,13 @@ class Database {
                 meta_description TEXT DEFAULT '',
                 UNIQUE(service_id, lang_code)
             );
+
+            CREATE TABLE IF NOT EXISTS password_resets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                token TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
         ");
 
         $this->seedData();
