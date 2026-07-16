@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت مقالات';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('author')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 if (isset($_GET['delete'])) {
     remove('posts', (int)$_GET['delete']);
     redirect(ADMIN_URL . '/posts.php?msg=deleted');

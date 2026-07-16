@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت زبان‌ها';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('admin')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 if (isset($_GET['delete'])) {
     remove('languages', (int)$_GET['delete']);
     redirect(ADMIN_URL . '/languages.php?msg=deleted');
@@ -23,6 +27,7 @@ if (isset($_GET['toggle'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $action = $_POST['action'] ?? '';
 
     if ($action == 'add' || $action == 'edit') {
@@ -157,13 +162,14 @@ if ($translateLang) {
 <?php if ($translateLang): ?>
 <div class="card">
     <div class="card-header">
-        <h2><i class="fas fa-language"></i> ترجمه‌های زبان <?= strtoupper($translateLang) ?></h2>
+        <h2><i class="fas fa-language"></i> ترجمه‌های زبان <?= attr(strtoupper($translateLang)) ?></h2>
         <a href="<?= ADMIN_URL ?>/languages.php" class="btn-admin btn-gray"><i class="fas fa-arrow-right"></i> بازگشت</a>
     </div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="translate">
-            <input type="hidden" name="lang_code" value="<?= $translateLang ?>">
+            <input type="hidden" name="lang_code" value="<?= attr($translateLang) ?>">
             <div class="translation-list" id="translationList">
                 <?php
                 $defaultLang = getDefaultLang();
@@ -209,6 +215,7 @@ if ($translateLang) {
             <button class="menu-modal-close" onclick="closeLangModal()">&times;</button>
         </div>
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="add" id="langFormAction">
             <input type="hidden" name="id" value="" id="langFormId">
             <div class="menu-modal-body">

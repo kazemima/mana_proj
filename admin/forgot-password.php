@@ -1,11 +1,13 @@
 <?php
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/security.php';
 
 $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $email = trim($_POST['email'] ?? '');
 
     if (empty($email)) {
@@ -86,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="success"><?= $message ?></div>
         <?php endif; ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
             <div class="form-group">
                 <label>ایمیل</label>
                 <div class="input-wrapper">

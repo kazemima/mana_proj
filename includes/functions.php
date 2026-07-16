@@ -20,22 +20,25 @@ function setSetting($key, $value) {
 function getAll($table, $where = "1=1", $order = "sort_order ASC, id DESC", $limit = null) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $sql = "SELECT * FROM $table WHERE $where ORDER BY $order";
-    if ($limit) $sql .= " LIMIT $limit";
+    if ($limit) $sql .= " LIMIT " . (int)$limit;
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function getById($table, $id) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
-    $stmt->execute([$id]);
+    $stmt->execute([(int)$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 function getBySlug($table, $slug) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE slug = ?");
     $stmt->execute([$slug]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,8 +47,9 @@ function getBySlug($table, $slug) {
 function insert($table, $data) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $keys = array_keys($data);
-    $cols = implode(', ', $keys);
+    $cols = implode(', ', array_map(function($k) { return preg_replace('/[^a-z_]/', '', strtolower($k)); }, $keys));
     $placeholders = implode(', ', array_fill(0, count($keys), '?'));
     $stmt = $pdo->prepare("INSERT INTO $table ($cols) VALUES ($placeholders)");
     $stmt->execute(array_values($data));
@@ -55,13 +59,15 @@ function insert($table, $data) {
 function update($table, $id, $data) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $sets = [];
     $values = [];
     foreach ($data as $k => $v) {
-        $sets[] = "$k = ?";
+        $safeKey = preg_replace('/[^a-z_]/', '', strtolower($k));
+        $sets[] = "$safeKey = ?";
         $values[] = $v;
     }
-    $values[] = $id;
+    $values[] = (int)$id;
     $stmt = $pdo->prepare("UPDATE $table SET " . implode(', ', $sets) . " WHERE id = ?");
     return $stmt->execute($values);
 }
@@ -69,13 +75,15 @@ function update($table, $id, $data) {
 function remove($table, $id) {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
-    return $stmt->execute([$id]);
+    return $stmt->execute([(int)$id]);
 }
 
 function countRows($table, $where = "1=1") {
     global $db;
     $pdo = $db->getConnection();
+    $table = sanitizeTableName($table);
     return $pdo->query("SELECT COUNT(*) FROM $table WHERE $where")->fetchColumn();
 }
 
@@ -308,7 +316,7 @@ function getResponsiveImage($filename) {
 
 function picture($filename, $alt = '', $class = '', $fetchPriority = '') {
     if (!$filename || strpos($filename, 'http') === 0) {
-        return '<img src="' . getImageUrl($filename) . '" alt="' . $alt . '"' . ($class ? ' class="' . $class . '"' : '') . ' loading="lazy">';
+        return '<img src="' . getImageUrl($filename) . '" alt="' . attr($alt) . '"' . ($class ? ' class="' . attr($class) . '"' : '') . ' loading="lazy">';
     }
 
     $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
@@ -328,42 +336,38 @@ function picture($filename, $alt = '', $class = '', $fetchPriority = '') {
     $hasTabletWebP = file_exists(UPLOAD_DIR . $tabletWebp);
     $hasTabletOrig = file_exists(UPLOAD_DIR . $tabletOrig);
 
-    $attr = $class ? ' class="' . $class . '"' : '';
+    $attr = $class ? ' class="' . attr($class) . '"' : '';
     $attr .= ' loading="lazy"';
     $attr .= ' decoding="async"';
-    if ($fetchPriority) $attr .= ' fetchpriority="' . $fetchPriority . '"';
+    if ($fetchPriority) $attr .= ' fetchpriority="' . attr($fetchPriority) . '"';
 
     $hasResponsive = $hasMobileWebP || $hasMobileOrig || $hasTabletWebP || $hasTabletOrig;
 
     if ($hasWebP || $hasResponsive) {
         $html = '<picture>';
 
-        // Mobile sources
         if ($hasMobileWebP) {
             $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileWebp . '" type="image/webp">';
         } elseif ($hasMobileOrig) {
             $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileOrig . '">';
         }
 
-        // Tablet sources
         if ($hasTabletWebP) {
             $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletWebp . '" type="image/webp">';
         } elseif ($hasTabletOrig) {
             $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletOrig . '">';
         }
 
-        // Desktop WebP
         if ($hasWebP) {
             $html .= '<source srcset="' . $baseUrl . $webpVersion . '" type="image/webp">';
         }
 
-        // Fallback
-        $html .= '<img src="' . $baseUrl . $filename . '" alt="' . $alt . '"' . $attr . '>';
+        $html .= '<img src="' . $baseUrl . $filename . '" alt="' . attr($alt) . '"' . $attr . '>';
         $html .= '</picture>';
         return $html;
     }
 
-    return '<img src="' . $baseUrl . $filename . '" alt="' . $alt . '"' . $attr . '>';
+    return '<img src="' . $baseUrl . $filename . '" alt="' . attr($alt) . '"' . $attr . '>';
 }
 
 function redirect($url) {

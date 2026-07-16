@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت پیام‌ها';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('editor')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 if (isset($_GET['delete'])) {
     remove('contact_messages', (int)$_GET['delete']);
     redirect(ADMIN_URL . '/messages.php?msg=deleted');

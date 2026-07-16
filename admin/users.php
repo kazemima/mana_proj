@@ -30,6 +30,7 @@ $msg = $_GET['msg'] ?? '';
 $editItem = isset($_GET['edit']) ? getById('users', (int)$_GET['edit']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $targetId = (int)($_POST['id'] ?? 0);
     $targetUser = $targetId ? getById('users', $targetId) : null;
 
@@ -147,6 +148,7 @@ $roleBadges = [
         </div>
         <div class="menu-modal-body">
             <form method="POST" id="userForm">
+                <?= csrfField() ?>
                 <input type="hidden" name="id" id="user_id" value="">
                 <div class="form-row">
                     <div class="form-group">

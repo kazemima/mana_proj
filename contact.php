@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
 $pageTitle = 'تماس با ما';
 
 $success = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
@@ -107,6 +109,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <?php endif; ?>
                 <form method="POST" class="contact-form">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="name">نام و نام خانوادگی *</label>

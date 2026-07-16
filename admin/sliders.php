@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت اسلایدر';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('editor')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 // Delete
 if (isset($_GET['delete'])) {
     remove('sliders', (int)$_GET['delete']);

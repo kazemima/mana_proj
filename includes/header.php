@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/security.php';
+sendSecurityHeaders();
+
 $pageTitle = isset($pageTitle) ? $pageTitle . ' - ' . getSetting('site_name') : getSetting('site_name');
 
 // Language support

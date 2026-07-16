@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت خدمات';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('editor')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 if (isset($_GET['delete'])) {
     remove('services', (int)$_GET['delete']);
     redirect(ADMIN_URL . '/services.php?msg=deleted');

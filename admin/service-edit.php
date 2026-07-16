@@ -2,6 +2,10 @@
 $pageTitle = 'ویرایش خدمت';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('editor')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $item = $id ? getById('services', $id) : null;
 if ($id && !$item) redirect(ADMIN_URL . '/services.php');
@@ -12,6 +16,7 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
 $existingTranslations = $id ? getServiceTranslationsAll($id) : [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $data = [
         'title' => trim($_POST['title']),
         'description' => trim($_POST['description']),
@@ -55,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card">
     <div class="card-body">
         <form method="POST" enctype="multipart/form-data">
+            <?= csrfField() ?>
             <div class="form-row">
                 <div class="form-group">
                     <label>عنوان *</label>

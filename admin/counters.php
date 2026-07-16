@@ -2,6 +2,10 @@
 $pageTitle = 'مدیریت شمارنده‌ها';
 require_once __DIR__ . '/includes/header.php';
 
+if (!hasPermission('editor')) {
+    redirect(ADMIN_URL . '/index.php');
+}
+
 if (isset($_GET['delete'])) {
     remove('counter_items', (int)$_GET['delete']);
     redirect(ADMIN_URL . '/counters.php?msg=deleted');
@@ -12,6 +16,7 @@ $msg = $_GET['msg'] ?? '';
 $editItem = isset($_GET['edit']) ? getById('counter_items', (int)$_GET['edit']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $data = [
         'title' => trim($_POST['title']),
         'value' => (int)$_POST['value'],
@@ -46,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <?php if ($editItem): ?>
             <input type="hidden" name="id" value="<?= $editItem['id'] ?>">
             <?php endif; ?>

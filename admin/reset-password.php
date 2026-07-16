@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/security.php';
 
 $token = $_GET['token'] ?? '';
 $error = '';
@@ -20,19 +21,20 @@ if (!$reset) {
 } else {
     $created = new DateTime($reset['created_at']);
     $now = new DateTime();
-    $diff = $now->diff($created);
-    if ($diff->h >= 1 && $diff->i > 0) {
+    $diff = $now->getTimestamp() - $created->getTimestamp();
+    if ($diff > 3600) {
         $error = 'لینک بازیابی منقضی شده است.';
         $pdo->prepare("DELETE FROM password_resets WHERE token = ?")->execute([$token]);
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
+    verifyCSRFToken();
     $password = $_POST['password'] ?? '';
     $passwordConfirm = $_POST['password_confirm'] ?? '';
 
-    if (strlen($password) < 6) {
-        $error = 'رمز عبور باید حداقل ۶ کاراکتر باشد.';
+    if (strlen($password) < 8) {
+        $error = 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
     } elseif ($password !== $passwordConfirm) {
         $error = 'رمز عبور و تکرار آن مطابقت ندارند.';
     } else {
@@ -100,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
         <?php endif; ?>
         <?php if (empty($error) && empty($message)): ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
             <div class="form-group">
                 <label>رمز عبور جدید</label>
                 <div class="input-wrapper">

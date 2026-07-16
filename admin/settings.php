@@ -3,6 +3,7 @@ $pageTitle = 'تنظیمات سایت';
 require_once __DIR__ . '/includes/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     // Password change
     if (isset($_POST['action']) && $_POST['action'] === 'change_password') {
         $currentPassword = $_POST['current_password'] ?? '';
@@ -18,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(ADMIN_URL . '/settings.php?msg=wrong_password');
         } elseif ($newPassword !== $confirmPassword) {
             redirect(ADMIN_URL . '/settings.php?msg=password_mismatch');
-        } elseif (strlen($newPassword) < 6) {
+        } elseif (strlen($newPassword) < 8) {
             redirect(ADMIN_URL . '/settings.php?msg=password_short');
         } else {
             update('users', $_SESSION['admin_id'], [
@@ -66,10 +67,11 @@ $msg = $_GET['msg'] ?? '';
 <div class="alert-admin alert-error"><i class="fas fa-exclamation-circle"></i> رمز عبور جدید و تکرار آن مطابقت ندارند.</div>
 <?php endif; ?>
 <?php if ($msg == 'password_short'): ?>
-<div class="alert-admin alert-error"><i class="fas fa-exclamation-circle"></i> رمز عبور باید حداقل ۶ کاراکتر باشد.</div>
+<div class="alert-admin alert-error"><i class="fas fa-exclamation-circle"></i> رمز عبور باید حداقل ۸ کاراکتر باشد.</div>
 <?php endif; ?>
 
 <form method="POST" enctype="multipart/form-data">
+    <?= csrfField() ?>
     <!-- General Settings -->
     <div class="card">
         <div class="card-header"><h2><i class="fas fa-globe"></i> تنظیمات عمومی</h2></div>
@@ -204,6 +206,7 @@ $msg = $_GET['msg'] ?? '';
     <div class="card-header"><h2><i class="fas fa-lock"></i> تغییر رمز عبور</h2></div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="change_password">
             <div class="form-row">
                 <div class="form-group">

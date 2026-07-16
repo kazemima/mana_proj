@@ -1,31 +1,55 @@
 <?php
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/security.php';
 
 if (isLoggedIn()) {
     redirect(ADMIN_URL . '/index.php');
 }
 
+// Brute force protection: max 5 attempts per 15 minutes
+$loginKey = 'login_attempts';
+$maxAttempts = 5;
+$lockoutTime = 900; // 15 minutes
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    verifyCSRFToken();
 
-    $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['admin_id'] = $user['id'];
-        $_SESSION['admin_name'] = $user['name'];
-        $_SESSION['admin_role'] = $user['role'];
-        update('users', $user['id'], ['last_login' => date('Y-m-d H:i:s')]);
-        redirect(ADMIN_URL . '/index.php');
+    $attempts = $_SESSION[$loginKey] ?? ['count' => 0, 'first' => time()];
+    if ($attempts['count'] >= $maxAttempts && (time() - $attempts['first']) < $lockoutTime) {
+        $remaining = $lockoutTime - (time() - $attempts['first']);
+        $error = 'تعداد تلاش‌ها بیش از حد مجاز است. لطفاً ' . ceil($remaining / 60) . ' دقیقه صبر کنید.';
     } else {
-        $error = 'نام کاربری یا رمز عبور اشتباه است.';
+        if ((time() - ($attempts['first'] ?? 0)) >= $lockoutTime) {
+            $attempts = ['count' => 0, 'first' => time()];
+        }
+
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        $pdo = $db->getConnection();
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['admin_id'] = $user['id'];
+            $_SESSION['admin_name'] = $user['name'];
+            $_SESSION['admin_role'] = $user['role'];
+            $_SESSION[$loginKey] = ['count' => 0, 'first' => time()];
+            update('users', $user['id'], ['last_login' => date('Y-m-d H:i:s')]);
+            redirect(ADMIN_URL . '/index.php');
+        } else {
+            $attempts['count']++;
+            $_SESSION[$loginKey] = $attempts;
+            $error = 'نام کاربری یا رمز عبور اشتباه است.';
+        }
     }
 }
+
+$csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
 <html dir="rtl" lang="fa">
@@ -67,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="error"><?= $error ?></div>
         <?php endif; ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
             <div class="form-group">
                 <label>نام کاربری</label>
                 <div class="input-wrapper">

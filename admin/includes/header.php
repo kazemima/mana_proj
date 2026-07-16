@@ -2,6 +2,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ob_start();
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../includes/security.php';
+sendSecurityHeaders();
 requireLogin();
 
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
