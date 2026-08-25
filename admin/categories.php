@@ -8,6 +8,7 @@ if (isset($_GET['delete'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $action = $_POST['action'] ?? '';
     if ($action == 'add') {
         insert('categories', [
@@ -47,6 +48,7 @@ $editCat = isset($_GET['edit']) ? getById('categories', (int)$_GET['edit']) : nu
     </div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="<?= $editCat ? 'edit' : 'add' ?>">
             <?php if ($editCat): ?>
             <input type="hidden" name="id" value="<?= $editCat['id'] ?>">

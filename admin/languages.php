@@ -23,6 +23,7 @@ if (isset($_GET['toggle'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $action = $_POST['action'] ?? '';
 
     if ($action == 'add' || $action == 'edit') {
@@ -162,6 +163,7 @@ if ($translateLang) {
     </div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="translate">
             <input type="hidden" name="lang_code" value="<?= $translateLang ?>">
             <div class="translation-list" id="translationList">
@@ -209,6 +211,7 @@ if ($translateLang) {
             <button class="menu-modal-close" onclick="closeLangModal()">&times;</button>
         </div>
         <form method="POST">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="add" id="langFormAction">
             <input type="hidden" name="id" value="" id="langFormId">
             <div class="menu-modal-body">

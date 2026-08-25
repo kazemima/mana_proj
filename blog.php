@@ -6,20 +6,26 @@ $search = isset($_GET['s']) ? trim($_GET['s']) : '';
 $catId = isset($_GET['cat']) ? (int)$_GET['cat'] : 0;
 
 $where = 'status = 1';
+$params = [];
 if ($search) {
-    $where .= " AND (title LIKE '%$search%' OR content LIKE '%$search%' OR excerpt LIKE '%$search%')";
+    $where .= " AND (title LIKE ? OR content LIKE ? OR excerpt LIKE ?)";
+    $searchParam = "%{$search}%";
+    $params[] = $searchParam;
+    $params[] = $searchParam;
+    $params[] = $searchParam;
 }
 if ($catId) {
-    $where .= " AND category_id = $catId";
+    $where .= " AND category_id = ?";
+    $params[] = $catId;
 }
 
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $perPage = 9;
 $offset = ($page - 1) * $perPage;
-$total = countRows('posts', $where);
+$total = countRows('posts', $where, $params);
 $totalPages = ceil($total / $perPage);
 
-$posts = getAll('posts', $where, 'created_at DESC', "$perPage OFFSET $offset");
+$posts = getAll('posts', $where, 'created_at DESC', "$perPage OFFSET $offset", $params);
 foreach ($posts as &$post) { $post = getLocalizedPost($post); }
 $categories = getAll('categories', '1=1', 'sort_order ASC');
 

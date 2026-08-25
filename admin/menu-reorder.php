@@ -14,6 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+verifyCSRFToken();
+
 $action = $_POST['action'] ?? '';
 
 if ($action == 'reorder_json') {

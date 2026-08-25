@@ -12,6 +12,7 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
 $existingTranslations = $id ? getServiceTranslationsAll($id) : [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $data = [
         'title' => trim($_POST['title']),
         'description' => trim($_POST['description']),
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card">
     <div class="card-body">
         <form method="POST" enctype="multipart/form-data">
+            <?= csrfField() ?>
             <div class="form-row">
                 <div class="form-group">
                     <label>عنوان *</label>

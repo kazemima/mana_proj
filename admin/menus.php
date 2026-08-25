@@ -24,6 +24,7 @@ if (isset($_GET['toggle'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $action = $_POST['action'] ?? '';
 
     if ($action == 'add' || $action == 'edit') {
@@ -114,6 +115,7 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
     <div class="card-body">
         <?php if (count($menuTree) > 0): ?>
         <form method="POST" id="reorderForm">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="reorder">
             <input type="hidden" name="order_data" id="orderData" value="">
             <div class="menu-tree" id="menuTree">
@@ -194,6 +196,7 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
             <button class="menu-modal-close" onclick="closeModal()">&times;</button>
         </div>
         <form method="POST" id="menuForm">
+            <?= csrfField() ?>
             <input type="hidden" name="action" value="add" id="formAction">
             <input type="hidden" name="id" value="" id="formId">
             <div class="menu-modal-body">
@@ -345,10 +348,11 @@ function saveOrder() {
     document.getElementById('orderData').value = JSON.stringify(orderData);
 
     // Auto-save via AJAX
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
     fetch('menu-reorder.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'action=reorder_json&order_data=' + encodeURIComponent(JSON.stringify(orderData))
+        body: 'action=reorder_json&order_data=' + encodeURIComponent(JSON.stringify(orderData)) + '&csrf_token=' + encodeURIComponent(csrfToken)
     }).then(r => r.json()).then(data => {
         if (data.success) {
             showToast('ترتیب ذخیره شد');

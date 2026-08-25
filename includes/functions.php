@@ -1,5 +1,7 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/security.php';
 
 function getSetting($key, $default = '') {
     global $db;
@@ -17,12 +19,15 @@ function setSetting($key, $value) {
     $stmt->execute([$key, $value]);
 }
 
-function getAll($table, $where = "1=1", $order = "sort_order ASC, id DESC", $limit = null) {
+function getAll($table, $where = "1=1", $order = "sort_order ASC, id DESC", $limit = null, $params = []) {
     global $db;
+    $table = sanitizeTableName($table);
     $pdo = $db->getConnection();
-    $sql = "SELECT * FROM $table WHERE $where ORDER BY $order";
+    $sql = "SELECT * FROM `$table` WHERE $where ORDER BY $order";
     if ($limit) $sql .= " LIMIT $limit";
-    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function getById($table, $id) {
@@ -43,6 +48,7 @@ function getBySlug($table, $slug) {
 
 function insert($table, $data) {
     global $db;
+    $table = sanitizeTableName($table);
     $pdo = $db->getConnection();
     $keys = array_keys($data);
     $cols = implode(', ', $keys);
@@ -54,6 +60,7 @@ function insert($table, $data) {
 
 function update($table, $id, $data) {
     global $db;
+    $table = sanitizeTableName($table);
     $pdo = $db->getConnection();
     $sets = [];
     $values = [];
@@ -68,15 +75,19 @@ function update($table, $id, $data) {
 
 function remove($table, $id) {
     global $db;
+    $table = sanitizeTableName($table);
     $pdo = $db->getConnection();
     $stmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
     return $stmt->execute([$id]);
 }
 
-function countRows($table, $where = "1=1") {
+function countRows($table, $where = "1=1", $params = []) {
     global $db;
+    $table = sanitizeTableName($table);
     $pdo = $db->getConnection();
-    return $pdo->query("SELECT COUNT(*) FROM $table WHERE $where")->fetchColumn();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM `$table` WHERE $where");
+    $stmt->execute($params);
+    return $stmt->fetchColumn();
 }
 
 function makeSlug($text) {
@@ -92,7 +103,7 @@ function uploadImage($file, $prefix = '') {
         return false;
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     if (!in_array($ext, $allowed)) return false;
     $name = $prefix . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
     move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $name);
@@ -142,10 +153,19 @@ function timeAgo($datetime) {
 function getCurrentLang() {
     if (isset($_SESSION['lang'])) return $_SESSION['lang'];
     if (isset($_GET['lang'])) {
-        $_SESSION['lang'] = $_GET['lang'];
-        return $_SESSION['lang'];
+        $lang = trim($_GET['lang']);
+        if (preg_match('/^[a-z]{2}$/', $lang)) {
+            global $db;
+            $pdo = $db->getConnection();
+            $stmt = $pdo->prepare("SELECT code FROM languages WHERE code = ? AND status = 1");
+            $stmt->execute([$lang]);
+            if ($stmt->fetch()) {
+                $_SESSION['lang'] = $lang;
+                return $lang;
+            }
+        }
     }
-    return 'fa';
+    return getDefaultLang();
 }
 
 function setCurrentLang($code) {

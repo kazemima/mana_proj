@@ -189,7 +189,7 @@ $seoDesc = getSeoDescription($seoItem);
             $item = getLocalizedMenuItem($item);
             ?>
             <li class="<?= $item['children'] ? 'has-submenu' : '' ?> <?= ($currentFile === ltrim($item['url'], '/') && $item['url'] !== '#') ? 'active' : '' ?>">
-                <a href="<?= $item['children'] ? '#' : resolveUrl($item['url']) ?>" <?php if ($item['target'] == '_blank'): ?>target="_blank"<?php endif; ?>>
+                <a href="<?= resolveUrl($item['url']) ?>" <?php if ($item['target'] == '_blank'): ?>target="_blank"<?php endif; ?>>
                     <?php if ($item['icon'] && !$item['children']): ?>
                     <i class="<?= $item['icon'] ?>" style="margin-left:6px;"></i>
                     <?php endif; ?>

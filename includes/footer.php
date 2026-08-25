@@ -89,38 +89,6 @@
     <i class="fas fa-chevron-up"></i>
 </a>
 
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobileMenu">
-    <div class="mobile-menu-header">
-        <span>منو</span>
-        <button class="mobile-menu-close" aria-label="بستن منو">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    <nav class="mobile-nav">
-        <ul>
-            <?php foreach ($menuTree as $item): ?>
-            <li class="<?= $item['children'] ? 'has-submenu' : '' ?>">
-                <a href="<?= resolveUrl($item['url']) ?>" <?php if ($item['target'] == '_blank'): ?>target="_blank"<?php endif; ?>>
-                    <?= sanitize($item['title']) ?>
-                    <?php if ($item['children']): ?>
-                    <i class="fas fa-chevron-down"></i>
-                    <?php endif; ?>
-                </a>
-                <?php if ($item['children']): ?>
-                <ul class="submenu">
-                    <?php foreach ($item['children'] as $child): ?>
-                    <li><a href="<?= resolveUrl($child['url']) ?>" <?php if ($child['target'] == '_blank'): ?>target="_blank"<?php endif; ?>><?= sanitize($child['title']) ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-                <?php endif; ?>
-            </li>
-            <?php endforeach; ?>
-        </ul>
-    </nav>
-</div>
-<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-
 <script src="<?= SITE_URL ?>/assets/js/main.js"></script>
 <script src="<?= SITE_URL ?>/assets/js/animations.js"></script>
 </body>

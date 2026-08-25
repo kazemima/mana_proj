@@ -3,6 +3,7 @@ $pageTitle = 'تنظیمات سایت';
 require_once __DIR__ . '/includes/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $fields = ['site_name', 'site_description', 'site_email', 'site_phone', 'site_address', 'facebook', 'twitter', 'linkedin', 'instagram', 'about_text', 'strategy_text', 'testimonial_text', 'testimonial_author', 'copyright'];
     foreach ($fields as $f) {
         if (isset($_POST[$f])) {
@@ -32,6 +33,7 @@ $msg = $_GET['msg'] ?? '';
 <?php endif; ?>
 
 <form method="POST" enctype="multipart/form-data">
+    <?= csrfField() ?>
     <!-- General Settings -->
     <div class="card">
         <div class="card-header"><h2><i class="fas fa-globe"></i> تنظیمات عمومی</h2></div>

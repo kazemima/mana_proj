@@ -12,6 +12,7 @@ $msg = $_GET['msg'] ?? '';
 $editItem = isset($_GET['edit']) ? getById('counter_items', (int)$_GET['edit']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCSRFToken();
     $data = [
         'title' => trim($_POST['title']),
         'value' => (int)$_POST['value'],
@@ -46,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="card-body">
         <form method="POST">
+            <?= csrfField() ?>
             <?php if ($editItem): ?>
             <input type="hidden" name="id" value="<?= $editItem['id'] ?>">
             <?php endif; ?>
