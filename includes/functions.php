@@ -20,25 +20,22 @@ function setSetting($key, $value) {
 function getAll($table, $where = "1=1", $order = "sort_order ASC, id DESC", $limit = null) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $sql = "SELECT * FROM $table WHERE $where ORDER BY $order";
-    if ($limit) $sql .= " LIMIT " . (int)$limit;
+    if ($limit) $sql .= " LIMIT $limit";
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function getById($table, $id) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
-    $stmt->execute([(int)$id]);
+    $stmt->execute([$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 function getBySlug($table, $slug) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE slug = ?");
     $stmt->execute([$slug]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -47,9 +44,8 @@ function getBySlug($table, $slug) {
 function insert($table, $data) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $keys = array_keys($data);
-    $cols = implode(', ', array_map(function($k) { return preg_replace('/[^a-z_]/', '', strtolower($k)); }, $keys));
+    $cols = implode(', ', $keys);
     $placeholders = implode(', ', array_fill(0, count($keys), '?'));
     $stmt = $pdo->prepare("INSERT INTO $table ($cols) VALUES ($placeholders)");
     $stmt->execute(array_values($data));
@@ -59,15 +55,13 @@ function insert($table, $data) {
 function update($table, $id, $data) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $sets = [];
     $values = [];
     foreach ($data as $k => $v) {
-        $safeKey = preg_replace('/[^a-z_]/', '', strtolower($k));
-        $sets[] = "$safeKey = ?";
+        $sets[] = "$k = ?";
         $values[] = $v;
     }
-    $values[] = (int)$id;
+    $values[] = $id;
     $stmt = $pdo->prepare("UPDATE $table SET " . implode(', ', $sets) . " WHERE id = ?");
     return $stmt->execute($values);
 }
@@ -75,15 +69,13 @@ function update($table, $id, $data) {
 function remove($table, $id) {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     $stmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
-    return $stmt->execute([(int)$id]);
+    return $stmt->execute([$id]);
 }
 
 function countRows($table, $where = "1=1") {
     global $db;
     $pdo = $db->getConnection();
-    $table = sanitizeTableName($table);
     return $pdo->query("SELECT COUNT(*) FROM $table WHERE $where")->fetchColumn();
 }
 
@@ -100,274 +92,17 @@ function uploadImage($file, $prefix = '') {
         return false;
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
     if (!in_array($ext, $allowed)) return false;
-
     $name = $prefix . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
-    $destPath = UPLOAD_DIR . $name;
-
-    // Move original file first
-    move_uploaded_file($file['tmp_name'], $destPath);
-
-    // Optimize image if GD is available
-    if (function_exists('imagecreatefromjpeg') || function_exists('imagecreatefrompng')) {
-        optimizeImage($destPath, $ext);
-        generateWebP($destPath, $ext);
-        generateResponsive($destPath, $name, $ext);
-    }
-
+    move_uploaded_file($file['tmp_name'], UPLOAD_DIR . $name);
     return $name;
 }
 
-function optimizeImage($filePath, $ext) {
-    $img = loadImage($filePath, $ext);
-    if (!$img) return;
-
-    $maxWidth = 1920;
-    $maxHeight = 1080;
-    $origWidth = imagesx($img);
-    $origHeight = imagesy($img);
-
-    // Resize if larger than max dimensions
-    if ($origWidth > $maxWidth || $origHeight > $maxHeight) {
-        $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight);
-        $newWidth = (int)($origWidth * $ratio);
-        $newHeight = (int)($origHeight * $ratio);
-        $resized = imagecreatetruecolor($newWidth, $newHeight);
-        imagealphablending($resized, false);
-        imagesavealpha($resized, true);
-        imagecopyresampled($resized, $img, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
-        imagedestroy($img);
-        $img = $resized;
-        $origWidth = $newWidth;
-        $origHeight = $newHeight;
-    }
-
-    saveImage($img, $filePath, $ext);
-    imagedestroy($img);
-}
-
-function generateWebP($filePath, $ext) {
-    $webpPath = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $filePath);
-    if ($ext === 'webp') return;
-
-    $img = loadImage($filePath, $ext);
-    if (!$img) return;
-
-    imagewebp($img, $webpPath, 82);
-    imagedestroy($img);
-}
-
-function generateResponsive($filePath, $originalName, $ext) {
-    $sizes = [
-        'mobile'  => ['max' => 480,  'suffix' => '_sm'],
-        'tablet'  => ['max' => 768,  'suffix' => '_md'],
-    ];
-
-    foreach ($sizes as $size) {
-        $img = loadImage($filePath, $ext);
-        if (!$img) continue;
-
-        $origWidth = imagesx($img);
-        $origHeight = imagesy($img);
-
-        if ($origWidth <= $size['max']) {
-            imagedestroy($img);
-            continue;
-        }
-
-        $ratio = $size['max'] / $origWidth;
-        $newWidth = $size['max'];
-        $newHeight = (int)($origHeight * $ratio);
-
-        $resized = imagecreatetruecolor($newWidth, $newHeight);
-        imagealphablending($resized, false);
-        imagesavealpha($resized, true);
-        imagecopyresampled($resized, $img, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
-        imagedestroy($img);
-
-        $nameWithoutExt = pathinfo($originalName, PATHINFO_FILENAME);
-        $responsiveName = $nameWithoutExt . $size['suffix'] . '.' . $ext;
-        $responsivePath = UPLOAD_DIR . $responsiveName;
-
-        saveImage($resized, $responsivePath, $ext);
-        imagedestroy($resized);
-
-        // Also generate WebP for responsive version
-        $webpPath = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $responsivePath);
-        $imgWebp = loadImage($responsivePath, $ext);
-        if ($imgWebp) {
-            imagewebp($imgWebp, $webpPath, 80);
-            imagedestroy($imgWebp);
-        }
-    }
-}
-
-function loadImage($filePath, $ext) {
-    switch (strtolower($ext)) {
-        case 'jpg':
-        case 'jpeg':
-            return imagecreatefromjpeg($filePath);
-        case 'png':
-            $img = imagecreatefrompng($filePath);
-            if ($img) {
-                imagealphablending($img, false);
-                imagesavealpha($img, true);
-            }
-            return $img;
-        case 'gif':
-            return imagecreatefromgif($filePath);
-        default:
-            return null;
-    }
-}
-
-function saveImage($img, $filePath, $ext) {
-    switch (strtolower($ext)) {
-        case 'jpg':
-        case 'jpeg':
-            imagejpeg($img, $filePath, 82);
-            break;
-        case 'png':
-            imagepng($img, $filePath, 6);
-            break;
-        case 'gif':
-            imagegif($img, $filePath);
-            break;
-    }
-}
-
-function getImageUrl($filename, $size = null) {
+function getImageUrl($filename) {
     if (!$filename) return SITE_URL . '/assets/images/placeholder.png';
     if (strpos($filename, 'http') === 0) return $filename;
-
-    $baseUrl = SITE_URL . '/assets/uploads/';
-
-    // If WebP is requested or browser supports it
-    if ($size) {
-        $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
-        $suffix = $size === 'mobile' ? '_sm' : '_md';
-
-        // Check if responsive WebP exists
-        $responsiveWebp = $nameWithoutExt . $suffix . '.webp';
-        if (file_exists(UPLOAD_DIR . $responsiveWebp)) {
-            return $baseUrl . $responsiveWebp;
-        }
-        // Check if responsive original exists
-        $responsiveOriginal = $nameWithoutExt . $suffix . '.' . $ext;
-        if (file_exists(UPLOAD_DIR . $responsiveOriginal)) {
-            return $baseUrl . $responsiveOriginal;
-        }
-    }
-
-    // Check if WebP version exists
-    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-    $ext = pathinfo($filename, PATHINFO_EXTENSION);
-    if ($ext !== 'webp') {
-        $webpVersion = $nameWithoutExt . '.webp';
-        if (file_exists(UPLOAD_DIR . $webpVersion)) {
-            return $baseUrl . $webpVersion;
-        }
-    }
-
-    return $baseUrl . $filename;
-}
-
-function getResponsiveImage($filename) {
-    if (!$filename || strpos($filename, 'http') === 0) return '';
-
-    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-    $ext = pathinfo($filename, PATHINFO_EXTENSION);
-    $baseUrl = SITE_URL . '/assets/uploads/';
-    $srcset = [];
-
-    // Mobile version
-    $mobileWebp = $nameWithoutExt . '_sm.webp';
-    $mobileOriginal = $nameWithoutExt . '_sm.' . $ext;
-    if (file_exists(UPLOAD_DIR . $mobileWebp)) {
-        $srcset[] = $baseUrl . $mobileWebp . ' 480w';
-    } elseif (file_exists(UPLOAD_DIR . $mobileOriginal)) {
-        $srcset[] = $baseUrl . $mobileOriginal . ' 480w';
-    }
-
-    // Tablet version
-    $tabletWebp = $nameWithoutExt . '_md.webp';
-    $tabletOriginal = $nameWithoutExt . '_md.' . $ext;
-    if (file_exists(UPLOAD_DIR . $tabletWebp)) {
-        $srcset[] = $baseUrl . $tabletWebp . ' 768w';
-    } elseif (file_exists(UPLOAD_DIR . $tabletOriginal)) {
-        $srcset[] = $baseUrl . $tabletOriginal . ' 768w';
-    }
-
-    // Original WebP
-    if ($ext !== 'webp') {
-        $webpVersion = $nameWithoutExt . '.webp';
-        if (file_exists(UPLOAD_DIR . $webpVersion)) {
-            $srcset[] = $baseUrl . $webpVersion . ' 1920w';
-        }
-    }
-
-    // Original
-    $srcset[] = $baseUrl . $filename . ' 1920w';
-
-    return implode(', ', $srcset);
-}
-
-function picture($filename, $alt = '', $class = '', $fetchPriority = '') {
-    if (!$filename || strpos($filename, 'http') === 0) {
-        return '<img src="' . getImageUrl($filename) . '" alt="' . attr($alt) . '"' . ($class ? ' class="' . attr($class) . '"' : '') . ' loading="lazy">';
-    }
-
-    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-    $ext = pathinfo($filename, PATHINFO_EXTENSION);
-    $baseUrl = SITE_URL . '/assets/uploads/';
-
-    $webpVersion = $nameWithoutExt . '.webp';
-    $hasWebP = file_exists(UPLOAD_DIR . $webpVersion) && $ext !== 'webp';
-
-    $mobileWebp = $nameWithoutExt . '_sm.webp';
-    $mobileOrig = $nameWithoutExt . '_sm.' . $ext;
-    $hasMobileWebP = file_exists(UPLOAD_DIR . $mobileWebp);
-    $hasMobileOrig = file_exists(UPLOAD_DIR . $mobileOrig);
-
-    $tabletWebp = $nameWithoutExt . '_md.webp';
-    $tabletOrig = $nameWithoutExt . '_md.' . $ext;
-    $hasTabletWebP = file_exists(UPLOAD_DIR . $tabletWebp);
-    $hasTabletOrig = file_exists(UPLOAD_DIR . $tabletOrig);
-
-    $attr = $class ? ' class="' . attr($class) . '"' : '';
-    $attr .= ' loading="lazy"';
-    $attr .= ' decoding="async"';
-    if ($fetchPriority) $attr .= ' fetchpriority="' . attr($fetchPriority) . '"';
-
-    $hasResponsive = $hasMobileWebP || $hasMobileOrig || $hasTabletWebP || $hasTabletOrig;
-
-    if ($hasWebP || $hasResponsive) {
-        $html = '<picture>';
-
-        if ($hasMobileWebP) {
-            $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileWebp . '" type="image/webp">';
-        } elseif ($hasMobileOrig) {
-            $html .= '<source media="(max-width: 480px)" srcset="' . $baseUrl . $mobileOrig . '">';
-        }
-
-        if ($hasTabletWebP) {
-            $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletWebp . '" type="image/webp">';
-        } elseif ($hasTabletOrig) {
-            $html .= '<source media="(max-width: 768px)" srcset="' . $baseUrl . $tabletOrig . '">';
-        }
-
-        if ($hasWebP) {
-            $html .= '<source srcset="' . $baseUrl . $webpVersion . '" type="image/webp">';
-        }
-
-        $html .= '<img src="' . $baseUrl . $filename . '" alt="' . attr($alt) . '"' . $attr . '>';
-        $html .= '</picture>';
-        return $html;
-    }
-
-    return '<img src="' . $baseUrl . $filename . '" alt="' . attr($alt) . '"' . $attr . '>';
+    return SITE_URL . '/assets/uploads/' . $filename;
 }
 
 function redirect($url) {
@@ -382,20 +117,6 @@ function sanitize($input) {
 
 function isLoggedIn() {
     return isset($_SESSION['admin_id']) && $_SESSION['admin_id'] > 0;
-}
-
-function hasPermission($requiredRole) {
-    if (!isLoggedIn()) return false;
-    $roleHierarchy = [
-        'admin' => 10,
-        'editor' => 7,
-        'author' => 5,
-        'contributor' => 3,
-        'subscriber' => 1,
-    ];
-    $userLevel = $roleHierarchy[$_SESSION['admin_role'] ?? 'subscriber'] ?? 0;
-    $requiredLevel = $roleHierarchy[$requiredRole] ?? 0;
-    return $userLevel >= $requiredLevel;
 }
 
 function requireLogin() {

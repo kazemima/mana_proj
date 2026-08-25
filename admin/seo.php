@@ -2,12 +2,7 @@
 $pageTitle = 'مدیریت سئو (SEO)';
 require_once __DIR__ . '/includes/header.php';
 
-if (!hasPermission('admin')) {
-    redirect(ADMIN_URL . '/index.php');
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifyCSRFToken();
     $fields = ['seo_meta_title', 'seo_meta_description', 'seo_meta_keywords', 'seo_og_image', 'seo_robots', 'seo_google_analytics', 'seo_schema_org'];
     foreach ($fields as $f) {
         if (isset($_POST[$f])) {
@@ -68,7 +63,6 @@ $servicesWithMeta = $pdo->query("SELECT COUNT(*) FROM services WHERE status = 1 
 </div>
 
 <form method="POST">
-    <?= csrfField() ?>
     <!-- Site SEO -->
     <div class="card">
         <div class="card-header"><h2><i class="fas fa-globe"></i> تنظیمات سئوی سایت</h2></div>

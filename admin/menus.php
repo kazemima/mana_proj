@@ -2,10 +2,6 @@
 $pageTitle = 'مدیریت منو';
 require_once __DIR__ . '/includes/header.php';
 
-if (!hasPermission('editor')) {
-    redirect(ADMIN_URL . '/index.php');
-}
-
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     $pdo = $db->getConnection();
@@ -28,7 +24,6 @@ if (isset($_GET['toggle'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifyCSRFToken();
     $action = $_POST['action'] ?? '';
 
     if ($action == 'add' || $action == 'edit') {
@@ -119,7 +114,6 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
     <div class="card-body">
         <?php if (count($menuTree) > 0): ?>
         <form method="POST" id="reorderForm">
-            <?= csrfField() ?>
             <input type="hidden" name="action" value="reorder">
             <input type="hidden" name="order_data" id="orderData" value="">
             <div class="menu-tree" id="menuTree">
@@ -200,7 +194,6 @@ $nonDefaultLangs = array_filter($activeLangs, fn($l) => $l['code'] !== $defaultL
             <button class="menu-modal-close" onclick="closeModal()">&times;</button>
         </div>
         <form method="POST" id="menuForm">
-            <?= csrfField() ?>
             <input type="hidden" name="action" value="add" id="formAction">
             <input type="hidden" name="id" value="" id="formId">
             <div class="menu-modal-body">

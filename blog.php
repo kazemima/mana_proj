@@ -55,7 +55,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="post-card">
                         <div class="post-image">
                             <a href="<?= SITE_URL ?>/post.php?slug=<?= $post['slug'] ?>">
-                                <?= picture($post['image'], $post['title']) ?>
+                                <img src="<?= getImageUrl($post['image']) ?>" alt="<?= sanitize($post['title']) ?>">
                             </a>
                         </div>
                         <div class="post-details">
@@ -75,13 +75,13 @@ require_once __DIR__ . '/includes/header.php';
                 <?php if ($totalPages > 1): ?>
                 <div class="pagination">
                     <?php if ($page > 1): ?>
-                    <a href="?page=<?= $page - 1 ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link" aria-label="صفحه قبل"><i class="fas fa-chevron-right"></i></a>
+                    <a href="?page=<?= $page - 1 ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link"><i class="fas fa-chevron-right"></i></a>
                     <?php endif; ?>
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <a href="?page=<?= $i ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link <?= $i == $page ? 'active' : '' ?>" aria-label="صفحه <?= $i ?>"><?= $i ?></a>
+                    <a href="?page=<?= $i ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link <?= $i == $page ? 'active' : '' ?>"><?= $i ?></a>
                     <?php endfor; ?>
                     <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?= $page + 1 ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link" aria-label="صفحه بعد"><i class="fas fa-chevron-left"></i></a>
+                    <a href="?page=<?= $page + 1 ?><?= $search ? '&s=' . urlencode($search) : '' ?>" class="page-link"><i class="fas fa-chevron-left"></i></a>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
@@ -99,7 +99,7 @@ require_once __DIR__ . '/includes/header.php';
                     <h3 class="widget-title">جستجو</h3>
                     <form action="<?= SITE_URL ?>/blog.php" method="GET" class="sidebar-search">
                         <input type="text" name="s" placeholder="جستجو در مقالات..." value="<?= sanitize($search) ?>">
-                        <button type="submit" aria-label="جستجو"><i class="fas fa-search"></i></button>
+                        <button type="submit"><i class="fas fa-search"></i></button>
                     </form>
                 </div>
 
@@ -128,7 +128,7 @@ require_once __DIR__ . '/includes/header.php';
                         <?php foreach ($recentPosts as $rp): ?>
                         <li>
                             <a href="<?= SITE_URL ?>/post.php?slug=<?= $rp['slug'] ?>">
-                                <?= picture($rp['image'], $rp['title'], 'sidebar-post-img') ?>
+                                <img src="<?= getImageUrl($rp['image']) ?>" alt="<?= sanitize($rp['title']) ?>">
                                 <div>
                                     <span class="post-date"><?= timeAgo($rp['created_at']) ?></span>
                                     <span class="post-title-mini"><?= sanitize($rp['title']) ?></span>

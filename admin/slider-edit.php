@@ -2,16 +2,11 @@
 $pageTitle = 'ویرایش اسلایدر';
 require_once __DIR__ . '/includes/header.php';
 
-if (!hasPermission('editor')) {
-    redirect(ADMIN_URL . '/index.php');
-}
-
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $item = $id ? getById('sliders', $id) : null;
 if ($id && !$item) redirect(ADMIN_URL . '/sliders.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifyCSRFToken();
     $data = [
         'title' => trim($_POST['title']),
         'subtitle' => trim($_POST['subtitle']),
@@ -44,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card">
     <div class="card-body">
         <form method="POST" enctype="multipart/form-data">
-            <?= csrfField() ?>
             <div class="form-row">
                 <div class="form-group">
                     <label>عنوان</label>

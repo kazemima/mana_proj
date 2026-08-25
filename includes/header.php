@@ -1,7 +1,4 @@
 <?php
-require_once __DIR__ . '/security.php';
-sendSecurityHeaders();
-
 $pageTitle = isset($pageTitle) ? $pageTitle . ' - ' . getSetting('site_name') : getSetting('site_name');
 
 // Language support
@@ -40,10 +37,6 @@ foreach ($activeLangs as $al) {
 $langDir = $langData ? $langData['direction'] : 'rtl';
 $langCode = $langData ? $langData['code'] : 'fa';
 
-// Preload first slider image for LCP
-$preloadSlide = $pdo->query("SELECT image FROM sliders WHERE status = 1 ORDER BY sort_order ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-$preloadImageUrl = $preloadSlide ? getImageUrl($preloadSlide['image']) : null;
-
 // SEO variables (can be overridden by individual pages)
 $seoItem = isset($seoItem) ? $seoItem : null;
 $seoTitle = getSeoTitle($seoItem);
@@ -57,27 +50,11 @@ $seoDesc = getSeoDescription($seoItem);
     <title><?= sanitize($seoTitle) ?></title>
     <?= renderSeoTags($seoItem) ?>
     <?= renderSchemaOrg($seoItem) ?>
-    <meta name="theme-color" content="#6dc051">
-    <?php if (getSetting('site_favicon')): ?>
-    <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
-    <link rel="shortcut icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>" type="image/x-icon">
-    <?php endif; ?>
-    <!-- Preload critical fonts for faster LCP (only above-the-fold weights) -->
-    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?= SITE_URL ?>/assets/fonts/Vazirmatn-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
-    <!-- Preload LCP hero image -->
-    <?php if ($preloadImageUrl): ?>
-    <link rel="preload" href="<?= $preloadImageUrl ?>" as="image" fetchpriority="high">
-    <?php endif; ?>
-    <!-- Preload font stylesheet -->
-    <link rel="preload" href="<?= SITE_URL ?>/assets/css/fonts-local.css" as="style">
+    <link rel="icon" href="<?= getImageUrl(getSetting('site_favicon')) ?>">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/fonts-local.css">
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"> -->
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="<?= SITE_URL ?>/assets/fonts/fontawesome-free-7.3.0-web/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css"></noscript>
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/animations.css">
 </head>
 <body>
 <!-- Top Bar -->
@@ -107,17 +84,17 @@ $seoDesc = getSeoDescription($seoItem);
                 </div>
                 <?php endif; ?>
                 <div class="social-icons">
-                    <?php if (getSetting('facebook') && getSetting('facebook') !== '#'): ?>
-                    <a href="<?= getSetting('facebook') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="فیسبوک"><i class="fab fa-facebook-f"></i></a>
+                    <?php if (getSetting('facebook')): ?>
+                    <a href="<?= getSetting('facebook') ?>" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('twitter') && getSetting('twitter') !== '#'): ?>
-                    <a href="<?= getSetting('twitter') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
+                    <?php if (getSetting('twitter')): ?>
+                    <a href="<?= getSetting('twitter') ?>" target="_blank" class="social-icon"><i class="fab fa-twitter"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('linkedin') && getSetting('linkedin') !== '#'): ?>
-                    <a href="<?= getSetting('linkedin') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="لینکدین"><i class="fab fa-linkedin-in"></i></a>
+                    <?php if (getSetting('linkedin')): ?>
+                    <a href="<?= getSetting('linkedin') ?>" target="_blank" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
                     <?php endif; ?>
-                    <?php if (getSetting('instagram') && getSetting('instagram') !== '#'): ?>
-                    <a href="<?= getSetting('instagram') ?>" target="_blank" rel="noopener" class="social-icon" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                    <?php if (getSetting('instagram')): ?>
+                    <a href="<?= getSetting('instagram') ?>" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -134,7 +111,7 @@ $seoDesc = getSeoDescription($seoItem);
             </button>
             <a href="<?= SITE_URL ?>" class="logo">
                 <?php if (getSetting('site_logo')): ?>
-                <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>" loading="eager" fetchpriority="high">
+                <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>">
                 <?php else: ?>
                 <span class="logo-text"><?= sanitize(getSetting('site_name')) ?></span>
                 <?php endif; ?>
@@ -172,9 +149,6 @@ $seoDesc = getSeoDescription($seoItem);
                 </ul>
             </nav>
             <div class="header-actions">
-                <button class="theme-toggle" aria-label="تغییر حالت نمایش" id="themeToggle" title="حالت شب/روز">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <button class="search-toggle" aria-label="جستجو">
                     <i class="fas fa-search"></i>
                 </button>
@@ -200,14 +174,14 @@ $seoDesc = getSeoDescription($seoItem);
 <!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-menu-header">
-        <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;" aria-label="<?= sanitize(getSetting('site_name')) ?>">
+        <a href="<?= SITE_URL ?>" style="color:#fff;text-decoration:none;">
             <?php if (getSetting('site_logo')): ?>
-            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="<?= sanitize(getSetting('site_name')) ?>" style="height:35px;vertical-align:middle;" loading="eager">
+            <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="" style="height:35px;vertical-align:middle;">
             <?php else: ?>
             <?= sanitize(getSetting('site_name')) ?>
             <?php endif; ?>
         </a>
-        <button class="mobile-menu-close" aria-label="بستن منو"><i class="fas fa-times"></i></button>
+        <button class="mobile-menu-close"><i class="fas fa-times"></i></button>
     </div>
     <nav class="mobile-nav">
         <ul>

@@ -27,7 +27,7 @@ $counters = getAll('counter_items', 'status = 1', 'sort_order ASC');
             </div>
             <div class="about-image">
                 <?php if (getSetting('site_logo')): ?>
-                <?= picture(getSetting('site_logo'), 'درباره ما') ?>
+                <img src="<?= getImageUrl(getSetting('site_logo')) ?>" alt="درباره ما">
                 <?php else: ?>
                 <div class="about-placeholder">
                     <i class="fas fa-building"></i>
