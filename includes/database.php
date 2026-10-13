@@ -6,10 +6,82 @@ class Database {
     private $pdo;
 
     private function __construct() {
-        $this->pdo = new PDO('sqlite:' . DB_PATH);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->exec('PRAGMA journal_mode = WAL');
-        $this->pdo->exec('PRAGMA foreign_keys = ON');
+        $this->pdo = $this->connect();
+    }
+
+    private function connect() {
+        try {
+            return $this->createConnection(DB_NAME);
+        } catch (PDOException $e) {
+            $code = (int)($e->errorInfo[1] ?? 0);
+
+            // 1049 = Unknown database. Create it once, then connect again.
+            if ($code === 1049) {
+                $this->createDatabase();
+                return $this->createConnection(DB_NAME);
+            }
+
+            throw new RuntimeException($this->describeError($e), 0, $e);
+        }
+    }
+
+    private function createConnection($database = null) {
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT;
+        if ($database !== null) {
+            $dsn .= ';dbname=' . $database;
+        }
+        $dsn .= ';charset=' . DB_CHARSET;
+
+        if (!preg_match('/^[A-Za-z0-9_]+$/', DB_CHARSET) || !preg_match('/^[A-Za-z0-9_]+$/', DB_COLLATION)) {
+            throw new RuntimeException('DB_CHARSET / DB_COLLATION معتبر نیستند.');
+        }
+
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        $pdo->exec('SET NAMES ' . DB_CHARSET . ' COLLATE ' . DB_COLLATION);
+        return $pdo;
+    }
+
+    private function createDatabase() {
+        if (!preg_match('/^[A-Za-z0-9_]+$/', DB_NAME)) {
+            throw new RuntimeException('نام دیتابیس (DB_NAME) نامعتبر است: ' . DB_NAME);
+        }
+        try {
+            $admin = $this->createConnection(null);
+            $admin->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` DEFAULT CHARACTER SET '
+                . DB_CHARSET . ' COLLATE ' . DB_COLLATION);
+            $admin = null;
+        } catch (PDOException $e) {
+            throw new RuntimeException(
+                'ساخت دیتابیس "' . DB_NAME . '" ممکن نشد (دسترسی CREATE لازم است) - ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+    }
+
+    private function describeError(PDOException $e) {
+        $code = (int)($e->errorInfo[1] ?? 0);
+        $detail = $e->getMessage();
+
+        if (stripos($detail, 'could not find driver') !== false) {
+            return 'افزونه pdo_mysql فعال نیست. لطفاً در php.ini خطای extension=pdo_mysql را فعال کنید.';
+        }
+
+        switch ($code) {
+            case 1045:
+                return 'دسترسی به MySQL رد شد. نام کاربری یا رمز عبور دیتابیس (DB_USER / DB_PASS) نادرست است. ' . $detail;
+            case 2002:
+            case 2003:
+                return 'اتصال به سرور MySQL برقرار نشد. میزبان یا پورت (DB_HOST / DB_PORT) را بررسی کنید. ' . $detail;
+            case 1049:
+                return 'دیتابیس "' . DB_NAME . '" پیدا نشد و ساخت آن ممکن نشد. ' . $detail;
+            case 1044:
+                return 'کاربر MySQL به دیتابیس "' . DB_NAME . '" دسترسی ندارد. ' . $detail;
+            default:
+                return 'خطای MySQL: ' . $detail;
+        }
     }
 
     public static function getInstance() {
@@ -23,207 +95,268 @@ class Database {
         return $this->pdo;
     }
 
+    public function tableExists($table) {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name = ?'
+        );
+        $stmt->execute([DB_NAME, $table]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Every statement is executed on its own: PDO MySQL does not accept a
+     * multi-statement string the way PDO SQLite did.
+     */
+    private function schemaStatements() {
+        $suffix = ' ENGINE=InnoDB DEFAULT CHARSET=' . DB_CHARSET . ' COLLATE=' . DB_COLLATION;
+
+        return [
+            "CREATE TABLE IF NOT EXISTS settings (
+                id INT NOT NULL AUTO_INCREMENT,
+                setting_key VARCHAR(100) NOT NULL,
+                setting_value TEXT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_settings_key (setting_key)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS users (
+                id INT NOT NULL AUTO_INCREMENT,
+                username VARCHAR(100) NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(190) NOT NULL DEFAULT '',
+                email VARCHAR(190) NULL DEFAULT '',
+                role VARCHAR(50) NULL DEFAULT 'admin',
+                last_login DATETIME NULL,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_users_username (username)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS sliders (
+                id INT NOT NULL AUTO_INCREMENT,
+                title VARCHAR(190) NOT NULL DEFAULT '',
+                subtitle VARCHAR(500) NULL DEFAULT '',
+                description TEXT NULL,
+                image VARCHAR(255) NULL DEFAULT '',
+                link VARCHAR(500) NULL DEFAULT '',
+                btn_text VARCHAR(190) NULL DEFAULT '',
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS services (
+                id INT NOT NULL AUTO_INCREMENT,
+                title VARCHAR(190) NOT NULL,
+                description TEXT NULL,
+                short_description TEXT NULL,
+                detail_content MEDIUMTEXT NULL,
+                icon VARCHAR(100) NULL DEFAULT '',
+                image VARCHAR(255) NULL DEFAULT '',
+                slug VARCHAR(191) NULL DEFAULT NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                meta_title VARCHAR(300) NULL DEFAULT '',
+                meta_description VARCHAR(600) NULL DEFAULT '',
+                meta_keywords VARCHAR(500) NULL DEFAULT '',
+                og_image VARCHAR(255) NULL DEFAULT '',
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_services_slug (slug)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS categories (
+                id INT NOT NULL AUTO_INCREMENT,
+                name VARCHAR(190) NOT NULL,
+                slug VARCHAR(191) NOT NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_categories_slug (slug)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS posts (
+                id INT NOT NULL AUTO_INCREMENT,
+                title VARCHAR(190) NOT NULL,
+                slug VARCHAR(191) NOT NULL,
+                content MEDIUMTEXT NULL,
+                excerpt TEXT NULL,
+                image VARCHAR(255) NULL DEFAULT '',
+                category_id INT NOT NULL DEFAULT 0,
+                author VARCHAR(190) NULL DEFAULT 'مدیریت',
+                views INT NOT NULL DEFAULT 0,
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                meta_title VARCHAR(300) NULL DEFAULT '',
+                meta_description VARCHAR(600) NULL DEFAULT '',
+                meta_keywords VARCHAR(500) NULL DEFAULT '',
+                og_image VARCHAR(255) NULL DEFAULT '',
+                canonical_url VARCHAR(500) NULL DEFAULT '',
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_posts_slug (slug)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS testimonials (
+                id INT NOT NULL AUTO_INCREMENT,
+                name VARCHAR(190) NOT NULL,
+                role VARCHAR(190) NULL DEFAULT '',
+                content TEXT NULL,
+                image VARCHAR(255) NULL DEFAULT '',
+                rating INT NOT NULL DEFAULT 5,
+                status TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS pages (
+                id INT NOT NULL AUTO_INCREMENT,
+                title VARCHAR(190) NOT NULL,
+                slug VARCHAR(191) NOT NULL,
+                content MEDIUMTEXT NULL,
+                page_category VARCHAR(100) NULL DEFAULT 'general',
+                page_template VARCHAR(100) NULL DEFAULT 'default',
+                meta_title VARCHAR(300) NULL DEFAULT '',
+                meta_description VARCHAR(600) NULL DEFAULT '',
+                meta_keywords VARCHAR(500) NULL DEFAULT '',
+                og_image VARCHAR(255) NULL DEFAULT '',
+                canonical_url VARCHAR(500) NULL DEFAULT '',
+                status TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_pages_slug (slug)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS counter_items (
+                id INT NOT NULL AUTO_INCREMENT,
+                title VARCHAR(190) NOT NULL,
+                value INT NOT NULL DEFAULT 0,
+                suffix VARCHAR(50) NULL DEFAULT '',
+                icon VARCHAR(100) NULL DEFAULT '',
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS contact_messages (
+                id INT NOT NULL AUTO_INCREMENT,
+                name VARCHAR(190) NOT NULL,
+                email VARCHAR(190) NULL DEFAULT '',
+                phone VARCHAR(50) NULL DEFAULT '',
+                subject VARCHAR(300) NULL DEFAULT '',
+                message TEXT NULL,
+                is_read TINYINT NOT NULL DEFAULT 0,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS faqs (
+                id INT NOT NULL AUTO_INCREMENT,
+                question VARCHAR(500) NOT NULL,
+                answer TEXT NULL,
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS menu_items (
+                id INT NOT NULL AUTO_INCREMENT,
+                parent_id INT NOT NULL DEFAULT 0,
+                title VARCHAR(190) NOT NULL,
+                url VARCHAR(500) NULL DEFAULT '',
+                target VARCHAR(20) NULL DEFAULT '_self',
+                icon VARCHAR(100) NULL DEFAULT '',
+                sort_order INT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS menu_translations (
+                id INT NOT NULL AUTO_INCREMENT,
+                menu_id INT NOT NULL,
+                lang_code VARCHAR(10) NOT NULL,
+                title VARCHAR(300) NULL DEFAULT '',
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_menu_translations (menu_id, lang_code)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS languages (
+                id INT NOT NULL AUTO_INCREMENT,
+                code VARCHAR(10) NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                native_name VARCHAR(100) NOT NULL DEFAULT '',
+                direction VARCHAR(10) NULL DEFAULT 'ltr',
+                flag VARCHAR(50) NULL DEFAULT '',
+                sort_order INT NOT NULL DEFAULT 0,
+                is_default TINYINT NOT NULL DEFAULT 0,
+                status TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_languages_code (code)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS translations (
+                id INT NOT NULL AUTO_INCREMENT,
+                lang_code VARCHAR(10) NOT NULL,
+                trans_key VARCHAR(150) NOT NULL,
+                trans_value TEXT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_translations (lang_code, trans_key)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS post_translations (
+                id INT NOT NULL AUTO_INCREMENT,
+                post_id INT NOT NULL,
+                lang_code VARCHAR(10) NOT NULL,
+                title VARCHAR(500) NULL DEFAULT '',
+                excerpt TEXT NULL,
+                content MEDIUMTEXT NULL,
+                meta_title VARCHAR(300) NULL DEFAULT '',
+                meta_description TEXT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_post_translations (post_id, lang_code)
+            )" . $suffix,
+
+            "CREATE TABLE IF NOT EXISTS service_translations (
+                id INT NOT NULL AUTO_INCREMENT,
+                service_id INT NOT NULL,
+                lang_code VARCHAR(10) NOT NULL,
+                title VARCHAR(500) NULL DEFAULT '',
+                description TEXT NULL,
+                short_description TEXT NULL,
+                detail_content MEDIUMTEXT NULL,
+                meta_title VARCHAR(300) NULL DEFAULT '',
+                meta_description TEXT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_service_translations (service_id, lang_code)
+            )" . $suffix,
+
+            // Used by admin/forgot-password.php and admin/reset-password.php.
+            "CREATE TABLE IF NOT EXISTS password_resets (
+                id INT NOT NULL AUTO_INCREMENT,
+                email VARCHAR(190) NOT NULL,
+                token VARCHAR(64) NOT NULL,
+                created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_password_resets_token (token),
+                KEY idx_password_resets_email (email)
+            )" . $suffix,
+        ];
+    }
+
+    /** Creates all tables (idempotent) without inserting any seed data. */
+    public function initSchema() {
+        foreach ($this->schemaStatements() as $sql) {
+            $this->pdo->exec($sql);
+        }
+    }
+
     public function initDatabase() {
-        $this->pdo->exec("
-            CREATE TABLE IF NOT EXISTS settings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                setting_key TEXT UNIQUE NOT NULL,
-                setting_value TEXT DEFAULT ''
-            );
-
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                name TEXT NOT NULL DEFAULT '',
-                email TEXT DEFAULT '',
-                role TEXT DEFAULT 'admin',
-                last_login DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS sliders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL DEFAULT '',
-                subtitle TEXT DEFAULT '',
-                description TEXT DEFAULT '',
-                image TEXT DEFAULT '',
-                link TEXT DEFAULT '',
-                btn_text TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS services (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                description TEXT DEFAULT '',
-                short_description TEXT DEFAULT '',
-                detail_content TEXT DEFAULT '',
-                icon TEXT DEFAULT '',
-                image TEXT DEFAULT '',
-                slug TEXT UNIQUE,
-                sort_order INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1,
-                meta_title TEXT DEFAULT '',
-                meta_description TEXT DEFAULT '',
-                meta_keywords TEXT DEFAULT '',
-                og_image TEXT DEFAULT '',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                slug TEXT UNIQUE NOT NULL,
-                sort_order INTEGER DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                slug TEXT UNIQUE NOT NULL,
-                content TEXT DEFAULT '',
-                excerpt TEXT DEFAULT '',
-                image TEXT DEFAULT '',
-                category_id INTEGER DEFAULT 0,
-                author TEXT DEFAULT 'مدیریت',
-                views INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1,
-                meta_title TEXT DEFAULT '',
-                meta_description TEXT DEFAULT '',
-                meta_keywords TEXT DEFAULT '',
-                og_image TEXT DEFAULT '',
-                canonical_url TEXT DEFAULT '',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS testimonials (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                role TEXT DEFAULT '',
-                content TEXT DEFAULT '',
-                image TEXT DEFAULT '',
-                rating INTEGER DEFAULT 5,
-                status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS pages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                slug TEXT UNIQUE NOT NULL,
-                content TEXT DEFAULT '',
-                page_category TEXT DEFAULT 'general',
-                page_template TEXT DEFAULT 'default',
-                meta_title TEXT DEFAULT '',
-                meta_description TEXT DEFAULT '',
-                meta_keywords TEXT DEFAULT '',
-                og_image TEXT DEFAULT '',
-                canonical_url TEXT DEFAULT '',
-                status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS counter_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                value INTEGER DEFAULT 0,
-                suffix TEXT DEFAULT '',
-                icon TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1
-            );
-
-            CREATE TABLE IF NOT EXISTS contact_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT DEFAULT '',
-                phone TEXT DEFAULT '',
-                subject TEXT DEFAULT '',
-                message TEXT DEFAULT '',
-                is_read INTEGER DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS faqs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                question TEXT NOT NULL,
-                answer TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1
-            );
-
-            CREATE TABLE IF NOT EXISTS menu_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                parent_id INTEGER DEFAULT 0,
-                title TEXT NOT NULL,
-                url TEXT DEFAULT '',
-                target TEXT DEFAULT '_self',
-                icon TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS menu_translations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                menu_id INTEGER NOT NULL,
-                lang_code TEXT NOT NULL,
-                title TEXT DEFAULT '',
-                UNIQUE(menu_id, lang_code)
-            );
-
-            CREATE TABLE IF NOT EXISTS languages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                code TEXT UNIQUE NOT NULL,
-                name TEXT NOT NULL,
-                native_name TEXT NOT NULL DEFAULT '',
-                direction TEXT DEFAULT 'ltr',
-                flag TEXT DEFAULT '',
-                sort_order INTEGER DEFAULT 0,
-                is_default INTEGER DEFAULT 0,
-                status INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS translations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lang_code TEXT NOT NULL,
-                trans_key TEXT NOT NULL,
-                trans_value TEXT DEFAULT '',
-                UNIQUE(lang_code, trans_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS post_translations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                post_id INTEGER NOT NULL,
-                lang_code TEXT NOT NULL,
-                title TEXT DEFAULT '',
-                excerpt TEXT DEFAULT '',
-                content TEXT DEFAULT '',
-                meta_title TEXT DEFAULT '',
-                meta_description TEXT DEFAULT '',
-                UNIQUE(post_id, lang_code)
-            );
-
-            CREATE TABLE IF NOT EXISTS service_translations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                service_id INTEGER NOT NULL,
-                lang_code TEXT NOT NULL,
-                title TEXT DEFAULT '',
-                description TEXT DEFAULT '',
-                short_description TEXT DEFAULT '',
-                detail_content TEXT DEFAULT '',
-                meta_title TEXT DEFAULT '',
-                meta_description TEXT DEFAULT '',
-                UNIQUE(service_id, lang_code)
-            );
-        ");
+        $this->initSchema();
 
         $this->seedData();
     }
@@ -255,12 +388,12 @@ class Database {
                 ['تنظیم جلسات', 'نظامی قوی در تنظیم جلسات'],
                 ['ثبت صورت جلسات', 'ثبت صورت جلسات و نتایج'],
                 ['نظر سنجی', 'انجام نظر سنجی از اعضاء'],
-                ['گزارشات متنوع', 'گزارشات متنوع از جلسات برگزار شده'],
+                ['گزارشات متنوع', 'گزارشات متنوع و کاربردی از جلسات برگزار شده'],
             ],
             'مستندات' => [
                 ['مدیریت اسناد', 'مدیریت انواع اسناد، نسخه ها و اصلاحیه ها'],
                 ['آرشیو دیجیتال', 'نگهداری و آرشیو دیجیتال اسناد'],
-                ['گزارشات مستندات', 'گزارشات متنوع و کاربردی در مورد انواع مستندات'],
+                ['گزارشات مستندات', 'گزارشات متنوع و کاربردی در مورد مستندات'],
             ],
             'مدیریت ریسک' => [
                 ['تعریف انواع ریسک', 'تعریف انواع ریسک، فرصت، عدم قطعیت ها'],
@@ -280,11 +413,11 @@ class Database {
             'اسکان' => [
                 ['مدیریت مهمان سراها', 'مدیریت هزینه های مالی مهمان سراها و خانه های سازمانی'],
                 ['رزرواسیون', 'سیستم رزرواسیون آنلاین'],
-                ['گزارش هزینه ها', 'گزارش گیری از هزینه های اسکان'],
+                ['گزارش هزینه ها', 'گزارش هزینه های اسکان'],
             ],
             'تغذیه' => [
                 ['سفارشات غذا', 'مدیریت در سفارشات غذا'],
-                ['قراردادها', 'مدیریت قرارداد های سازمان با مراکز توزیع'],
+                ['قراردادها', 'قرارداد های سازمان با مراکز توزیع'],
                 ['گزارشات', 'گزارشات مربوطه از سفارشات و هزینه ها'],
             ],
             'خدمات' => [
@@ -308,7 +441,8 @@ class Database {
     private function seedData() {
         $check = $this->pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
         if ($check == 0) {
-            $this->pdo->exec("INSERT INTO users (username, password, name, email, role) VALUES ('admin', '" . password_hash('admin123', PASSWORD_DEFAULT) . "', 'مدیر سایت', 'info@mymana-co.ir', 'admin')");
+            $stmt = $this->pdo->prepare("INSERT INTO users (username, password, name, email, role) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT), 'مدیر سایت', 'info@mymana-co.ir', 'admin']);
         }
 
         $check = $this->pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();

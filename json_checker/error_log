@@ -1,0 +1,16 @@
+[27-Sep-2026 13:11:50 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined function array_is_list() in /home/cp33570/public_html/json_checker/index.php:297
+Stack trace:
+#0 {main}
+  thrown in /home/cp33570/public_html/json_checker/index.php on line 297
+[08-Oct-2026 10:06:52 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined function array_is_list() in /home/cp33570/public_html/json_checker/index.php:297
+Stack trace:
+#0 {main}
+  thrown in /home/cp33570/public_html/json_checker/index.php on line 297
+[08-Oct-2026 10:10:24 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined function array_is_list() in /home/cp33570/public_html/json_checker/index.php:297
+Stack trace:
+#0 {main}
+  thrown in /home/cp33570/public_html/json_checker/index.php on line 297
+[08-Oct-2026 10:11:12 Asia/Tehran] PHP Fatal error:  Uncaught Error: Call to undefined function array_is_list() in /home/cp33570/public_html/json_checker/index.php:297
+Stack trace:
+#0 {main}
+  thrown in /home/cp33570/public_html/json_checker/index.php on line 297

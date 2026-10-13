@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $keys = $_POST['trans_key'] ?? [];
         $values = $_POST['trans_value'] ?? [];
         $pdo = $db->getConnection();
-        $stmt = $pdo->prepare("INSERT INTO translations (lang_code, trans_key, trans_value) VALUES (?, ?, ?) ON CONFLICT(lang_code, trans_key) DO UPDATE SET trans_value = excluded.trans_value");
+        $stmt = $pdo->prepare("INSERT INTO translations (lang_code, trans_key, trans_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE trans_value = VALUES(trans_value)");
         foreach ($keys as $index => $key) {
             if (!empty($key)) {
                 $stmt->execute([$langCode, $key, $values[$index] ?? '']);

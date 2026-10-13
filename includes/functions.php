@@ -15,7 +15,7 @@ function getSetting($key, $default = '') {
 function setSetting($key, $value) {
     global $db;
     $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value");
+    $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
     $stmt->execute([$key, $value]);
 }
 
@@ -123,7 +123,8 @@ function redirect($url) {
 }
 
 function sanitize($input) {
-    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    // MySQL can return NULL for optional columns; normalize before output.
+    return htmlspecialchars(trim((string)$input), ENT_QUOTES, 'UTF-8');
 }
 
 function isLoggedIn() {
@@ -265,7 +266,7 @@ function getLangUrl($lang) {
 function savePostTranslations($postId, $langCodes, $formData) {
     global $db;
     $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("INSERT INTO post_translations (post_id, lang_code, title, excerpt, content, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(post_id, lang_code) DO UPDATE SET title = excluded.title, excerpt = excluded.excerpt, content = excluded.content, meta_title = excluded.meta_title, meta_description = excluded.meta_description");
+    $stmt = $pdo->prepare("INSERT INTO post_translations (post_id, lang_code, title, excerpt, content, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), excerpt = VALUES(excerpt), content = VALUES(content), meta_title = VALUES(meta_title), meta_description = VALUES(meta_description)");
 
     foreach ($langCodes as $langCode) {
         $title = trim($formData[$langCode]['title'] ?? '');
@@ -283,7 +284,7 @@ function savePostTranslations($postId, $langCodes, $formData) {
 function saveServiceTranslations($serviceId, $langCodes, $formData) {
     global $db;
     $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("INSERT INTO service_translations (service_id, lang_code, title, description, short_description, detail_content, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id, lang_code) DO UPDATE SET title = excluded.title, description = excluded.description, short_description = excluded.short_description, detail_content = excluded.detail_content, meta_title = excluded.meta_title, meta_description = excluded.meta_description");
+    $stmt = $pdo->prepare("INSERT INTO service_translations (service_id, lang_code, title, description, short_description, detail_content, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description), short_description = VALUES(short_description), detail_content = VALUES(detail_content), meta_title = VALUES(meta_title), meta_description = VALUES(meta_description)");
 
     foreach ($langCodes as $langCode) {
         $title = trim($formData[$langCode]['title'] ?? '');
@@ -348,7 +349,7 @@ function getLocalizedMenuItem($item) {
 function saveMenuTranslations($menuId, $langCodes, $formData) {
     global $db;
     $pdo = $db->getConnection();
-    $stmt = $pdo->prepare("INSERT INTO menu_translations (menu_id, lang_code, title) VALUES (?, ?, ?) ON CONFLICT(menu_id, lang_code) DO UPDATE SET title = excluded.title");
+    $stmt = $pdo->prepare("INSERT INTO menu_translations (menu_id, lang_code, title) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title)");
 
     foreach ($langCodes as $langCode) {
         $title = trim($formData[$langCode]['title'] ?? '');

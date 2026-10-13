@@ -1,0 +1,3 @@
+User: cp33570_muser
+Database: cp33570_mana
+pass: SMD_DB05
